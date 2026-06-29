@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "837187985882",
+    "project_id": "hcm202-2d75e",
+    "storage_bucket": "hcm202-2d75e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837187985882:android:e85e6df1ad99a9e63660e3",
+        "android_client_info": {
+          "package_name": "com.example.fe_pet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "837187985882-fhc4m8i1pjljd50le64p8q4nps03h942.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARhhhN5HRiFSb5UdtkaW2OCepq6_WShKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "837187985882-fhc4m8i1pjljd50le64p8q4nps03h942.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "837187985882-p2betv5hj7lihalqbmthh45r37g131co.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fePetshop"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837187985882:android:76857bcc2c3965f63660e3",
+        "android_client_info": {
+          "package_name": "com.example.fe_petshop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "837187985882-fhc4m8i1pjljd50le64p8q4nps03h942.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARhhhN5HRiFSb5UdtkaW2OCepq6_WShKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "837187985882-fhc4m8i1pjljd50le64p8q4nps03h942.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "837187985882-p2betv5hj7lihalqbmthh45r37g131co.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fePetshop"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

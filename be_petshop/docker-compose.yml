@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: petshop_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourPassword123!
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petshop_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=sqlserver://db:1433;database=PetParadiseDB;user=sa;password=YourPassword123!;encrypt=true;trustServerCertificate=true;
+      - JWT_ACCESS_SECRET=your-super-secret-access-token-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-token-key-change-in-production
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+    depends_on:
+      - db
+
+volumes:
+  mssql_data:

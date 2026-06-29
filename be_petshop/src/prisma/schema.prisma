@@ -1,0 +1,107 @@
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  UserId       Int            @id @default(autoincrement())
+  FullName     String
+  Email        String         @unique
+  PasswordHash String
+  Phone        String?
+  Avatar       String?
+  Role         String         @default("CUSTOMER") // CUSTOMER, ADMIN
+  CreatedAt    DateTime       @default(now())
+  UpdatedAt    DateTime       @updatedAt
+  CartItems    CartItem[]
+  Orders       Order[]
+  Notifications Notification[]
+  ChatRooms    ChatRoom[]
+  Messages     Message[]
+}
+
+model Category {
+  CategoryId  Int       @id @default(autoincrement())
+  Name        String
+  Description String?
+  ImageUrl    String?
+  Products    Product[]
+}
+
+model Product {
+  ProductId    Int           @id @default(autoincrement())
+  CategoryId   Int
+  Name         String
+  Description  String?
+  Price        Float
+  Stock        Int
+  ImageUrl     String?
+  CreatedAt    DateTime      @default(now())
+  Category     Category      @relation(fields: [CategoryId], references: [CategoryId], onDelete: Cascade)
+  CartItems    CartItem[]
+  OrderDetails OrderDetail[]
+}
+
+model CartItem {
+  CartItemId Int     @id @default(autoincrement())
+  UserId     Int
+  ProductId  Int
+  Quantity   Int
+  User       User    @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
+  Product    Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+
+  @@unique([UserId, ProductId])
+}
+
+model Order {
+  OrderId         Int           @id @default(autoincrement())
+  UserId          Int
+  TotalAmount     Float
+  ShippingAddress String
+  Status          String        @default("PENDING") // PENDING, PROCESSING, SHIPPING, DELIVERED, CANCELLED
+  CreatedAt       DateTime      @default(now())
+  User            User          @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
+  OrderDetails    OrderDetail[]
+}
+
+model OrderDetail {
+  OrderDetailId Int     @id @default(autoincrement())
+  OrderId       Int
+  ProductId     Int
+  Quantity      Int
+  UnitPrice     Float
+  Order         Order   @relation(fields: [OrderId], references: [OrderId], onDelete: Cascade)
+  Product       Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+}
+
+model Notification {
+  NotificationId Int      @id @default(autoincrement())
+  UserId         Int
+  Title          String
+  Content        String
+  IsRead         Boolean  @default(false)
+  CreatedAt      DateTime @default(now())
+  User           User     @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
+}
+
+model ChatRoom {
+  ChatRoomId Int       @id @default(autoincrement())
+  UserId     Int
+  CreatedAt  DateTime  @default(now())
+  User       User      @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
+  Messages   Message[]
+}
+
+model Message {
+  MessageId  Int      @id @default(autoincrement())
+  ChatRoomId Int
+  SenderId   Int
+  Content    String
+  CreatedAt  DateTime @default(now())
+  ChatRoom   ChatRoom @relation(fields: [ChatRoomId], references: [ChatRoomId], onDelete: Cascade, onUpdate: NoAction)
+  Sender     User     @relation(fields: [SenderId], references: [UserId], onDelete: NoAction, onUpdate: NoAction)
+}

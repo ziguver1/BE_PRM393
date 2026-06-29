@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "fe_pet (Chrome - Port 5500)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": [
+        "--web-port",
+        "5500"
+      ]
+    },
+    {
+      "name": "fe_pet (Default)",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}
