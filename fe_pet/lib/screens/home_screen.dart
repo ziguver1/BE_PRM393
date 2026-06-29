@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../data/pet_knowledge_data.dart';
 import '../providers/auth_provider.dart';
+import '../providers/cart_provider.dart';
 import 'chat_screen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -96,15 +98,42 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        IconButton(
-                          onPressed: () async {
-                            await authProvider.logout();
-                          },
-                          icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(alpha: 0.15),
-                            padding: const EdgeInsets.all(10),
-                          ),
+                        Row(
+                          children: [
+                            Consumer<CartProvider>(
+                              builder: (context, cartProvider, _) {
+                                return Badge(
+                                  label: Text(cartProvider.totalItems.toString()),
+                                  isLabelVisible: cartProvider.totalItems > 0,
+                                  backgroundColor: Colors.red,
+                                  child: IconButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const CartScreen()),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                      padding: const EdgeInsets.all(10),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () async {
+                                await authProvider.logout();
+                              },
+                              icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                padding: const EdgeInsets.all(10),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -361,38 +390,77 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Giá & Trạng thái kho
+                // Giá & Nút Thêm vào giỏ hàng
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       _formatCurrency(product.price),
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: Colors.orange.shade700,
                       ),
                     ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
+                    InkWell(
+                      onTap: () async {
+                        final dbProductId = int.tryParse(product.id.replaceAll(RegExp(r'\D'), '')) ?? 1;
+                        final cartProvider = context.read<CartProvider>();
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                ),
+                                const SizedBox(width: 12),
+                                Text('Đang thêm "${product.name}" vào giỏ...'),
+                              ],
+                            ),
+                            backgroundColor: Colors.orange.shade800,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(milliseconds: 500),
                           ),
+                        );
+
+                        final success = await cartProvider.addToCart(dbProductId, 1);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Đã thêm "${product.name}" vào giỏ hàng!'),
+                                backgroundColor: Colors.green.shade700,
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(cartProvider.errorMessage ?? 'Không thể thêm vào giỏ'),
+                                backgroundColor: Colors.red.shade700,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade700,
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Còn hàng',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        child: const Icon(
+                          Icons.add_shopping_cart_rounded,
+                          color: Colors.white,
+                          size: 16,
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
