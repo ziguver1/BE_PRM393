@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
-    "prisma:db-push": "prisma db push"
+    "prisma:db-push": "prisma db push",
+    "seed:categories": "node src/seed_categories.js"
   },
   "dependencies": {
     "next": "^15.1.0",

@@ -8,8 +8,8 @@ class AppSpacing {
   static const double xxxl = 48.0;
 
   // Design Radii
-  static const double cardRadius = 18.0;
-  static const double buttonRadius = 14.0;
-  static const double inputRadius = 12.0;
+  static const double cardRadius = 24.0;
+  static const double buttonRadius = 16.0;
+  static const double inputRadius = 18.0;
   static const double avatarRadius = 24.0;
 }

@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
+import '../providers/home_provider.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../core/widgets/product_card.dart';
+
+class RecommendedGrid extends ConsumerWidget {
+  const RecommendedGrid({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final popularAsync = ref.watch(homePopularProductsProvider);
+
+    return popularAsync.when(
+      data: (products) {
+        if (products.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.70,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final product = products[index];
+                return ProductCard(
+                  product: product,
+                  onTap: () => context.push('/product/${product.productId}'),
+                );
+              },
+              childCount: products.length,
+            ),
+          ),
+        );
+      },
+      loading: () => SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        sliver: SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.70,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => Shimmer.fromColors(
+              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+              highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                ),
+                child: Container(),
+              ),
+            ),
+            childCount: 4,
+          ),
+        ),
+      ),
+      error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+    );
+  }
+}

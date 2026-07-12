@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_spacing.dart';
@@ -94,6 +95,20 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      extensions: [
+        HeaderThemeExtension(
+          backgroundGradient: const LinearGradient(
+            colors: [Color(0xFFFFFDF9), Color(0xFFFFEEDB)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          radialGlowColor: const Color(0xFFFFE0C2).withValues(alpha: 0.25),
+          height: 220,
+          searchBarBg: Colors.white,
+          searchBarRadius: 18,
+          floatingButtonBg: Colors.white,
+        ),
+      ],
     );
   }
 
@@ -187,6 +202,72 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      extensions: [
+        HeaderThemeExtension(
+          backgroundGradient: const LinearGradient(
+            colors: [Color(0xFF1E1E24), Color(0xFF151210)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          radialGlowColor: const Color(0xFFFF9E47).withValues(alpha: 0.08),
+          height: 220,
+          searchBarBg: const Color(0xFF2A2A30),
+          searchBarRadius: 18,
+          floatingButtonBg: const Color(0xFF2A2A30),
+        ),
+      ],
+    );
+  }
+}
+
+class HeaderThemeExtension extends ThemeExtension<HeaderThemeExtension> {
+  final Gradient backgroundGradient;
+  final Color radialGlowColor;
+  final double height;
+  final Color searchBarBg;
+  final double searchBarRadius;
+  final Color floatingButtonBg;
+
+  HeaderThemeExtension({
+    required this.backgroundGradient,
+    required this.radialGlowColor,
+    required this.height,
+    required this.searchBarBg,
+    required this.searchBarRadius,
+    required this.floatingButtonBg,
+  });
+
+  @override
+  HeaderThemeExtension copyWith({
+    Gradient? backgroundGradient,
+    Color? radialGlowColor,
+    double? height,
+    Color? searchBarBg,
+    double? searchBarRadius,
+    Color? floatingButtonBg,
+  }) {
+    return HeaderThemeExtension(
+      backgroundGradient: backgroundGradient ?? this.backgroundGradient,
+      radialGlowColor: radialGlowColor ?? this.radialGlowColor,
+      height: height ?? this.height,
+      searchBarBg: searchBarBg ?? this.searchBarBg,
+      searchBarRadius: searchBarRadius ?? this.searchBarRadius,
+      floatingButtonBg: floatingButtonBg ?? this.floatingButtonBg,
+    );
+  }
+
+  @override
+  HeaderThemeExtension lerp(ThemeExtension<HeaderThemeExtension>? other, double t) {
+    if (other is! HeaderThemeExtension) {
+      return this;
+    }
+    return HeaderThemeExtension(
+      backgroundGradient: Gradient.lerp(backgroundGradient, other.backgroundGradient, t)!,
+      radialGlowColor: Color.lerp(radialGlowColor, other.radialGlowColor, t)!,
+      height: lerpDouble(height, other.height, t)!,
+      searchBarBg: Color.lerp(searchBarBg, other.searchBarBg, t)!,
+      searchBarRadius: lerpDouble(searchBarRadius, other.searchBarRadius, t)!,
+      floatingButtonBg: Color.lerp(floatingButtonBg, other.floatingButtonBg, t)!,
     );
   }
 }

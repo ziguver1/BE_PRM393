@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../constants/api_constants.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -186,12 +186,6 @@ class ApiClient {
     if (envUrl != null && envUrl.isNotEmpty) {
       return envUrl;
     }
-    if (kIsWeb) return 'http://localhost:3000/api';
-    try {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        return 'http://10.0.2.2:3000/api';
-      }
-    } catch (_) {}
-    return 'http://localhost:3000/api';
+    return ApiConstants.apiBaseUrl;
   }
 }

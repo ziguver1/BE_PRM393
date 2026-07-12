@@ -40,7 +40,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
             phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-            avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=${_nameController.text.trim()}',
+            avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=${_nameController.text.trim()}',
           );
     }
   }

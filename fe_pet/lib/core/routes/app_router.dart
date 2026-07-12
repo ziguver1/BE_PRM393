@@ -58,9 +58,12 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // If user is unauthenticated and trying to access protected paths, force login
+      // If user is unauthenticated, redirect to /login unless they are already on an auth form route
       if (authState.status == AuthStatus.unauthenticated) {
-        return isAuthPath ? null : '/login';
+        final isAuthFormPath = state.matchedLocation == '/login' ||
+                               state.matchedLocation == '/register' ||
+                               state.matchedLocation == '/forgot-password';
+        return isAuthFormPath ? null : '/login';
       }
 
       // If user is authenticated and trying to access login/register/splash, redirect to home
