@@ -6,6 +6,36 @@ import { PayOS } from '@payos/node';
 export class OrderRepository {
   async createOrder(userId: number, shippingAddress: string): Promise<any> {
     return prisma.$transaction(async (tx: any) => {
+      // 0. Tự động hủy các đơn hàng PENDING cũ của user này để hoàn trả kho trước khi tạo đơn mới (Tránh spam khóa kho)
+      const oldPendingOrders = await tx.order.findMany({
+        where: {
+          UserId: userId,
+          Status: 'PENDING',
+        },
+      });
+
+      for (const oldOrder of oldPendingOrders) {
+        const details = await tx.orderDetail.findMany({
+          where: { OrderId: oldOrder.OrderId },
+        });
+        
+        for (const detail of details) {
+          await tx.product.update({
+            where: { ProductId: detail.ProductId },
+            data: {
+              Stock: {
+                increment: detail.Quantity,
+              },
+            },
+          });
+        }
+
+        await tx.order.update({
+          where: { OrderId: oldOrder.OrderId },
+          data: { Status: 'CANCELLED' },
+        });
+      }
+
       // 1. Get user cart items
       const cartItems = await tx.cartItem.findMany({
         where: { UserId: userId },
@@ -58,11 +88,6 @@ export class OrderRepository {
         });
       }
 
-      // 5. Clear cart
-      await tx.cartItem.deleteMany({
-        where: { UserId: userId },
-      });
-
       return order;
     });
   }
@@ -100,12 +125,14 @@ export class OrderRepository {
         pendingOrders.map(async (order) => {
           try {
             const payosOrder = await payos.paymentRequests.get(order.OrderCode!);
-            if (payosOrder && payosOrder.status === 'PAID') {
-              await prisma.order.update({
-                where: { OrderId: order.OrderId },
-                data: { Status: 'PAID' },
-              });
-              order.Status = 'PAID'; // Cập nhật trực tiếp vào đối tượng để phản hồi ngay lập tức
+            if (payosOrder) {
+              if (payosOrder.status === 'PAID') {
+                await this.updateStatus(order.OrderId, 'PAID');
+                order.Status = 'PAID';
+              } else if (payosOrder.status === 'CANCELLED' || payosOrder.status === 'EXPIRED') {
+                await this.updateStatus(order.OrderId, 'CANCELLED');
+                order.Status = 'CANCELLED';
+              }
             }
           } catch (err) {
             // Im lặng nếu lỗi (link chưa được thanh toán hoặc hết hạn trên PayOS)

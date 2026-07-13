@@ -188,6 +188,20 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            context.canPop()
+                ? Icons.arrow_back_ios_new_rounded
+                : Icons.home_rounded,
+          ),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
+        ),
         title: const Text(
           'Đơn hàng của tôi',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

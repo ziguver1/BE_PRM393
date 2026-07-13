@@ -33,11 +33,13 @@ class ProfileScreen extends ConsumerWidget {
             ],
 
             // Profile Actions/Menu List
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
+            Material(
+              color: isDark ? AppColors.surfaceDark : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
+                side: BorderSide(
                   color: isDark ? AppColors.borderDark : AppColors.border,
                 ),
               ),

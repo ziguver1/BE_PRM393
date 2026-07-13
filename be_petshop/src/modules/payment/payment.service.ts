@@ -1,6 +1,7 @@
 import { PayOS } from '@payos/node';
 import prisma from '@/lib/prisma';
 import { AppError } from '@/middleware/error.middleware';
+import { OrderRepository } from '@/repositories/order.repository';
 
 export class PaymentService {
   private payos: PayOS;
@@ -80,10 +81,12 @@ export class PaymentService {
       }
 
       if (data.code === '00' || data.code === 'PAID') {
-        await prisma.order.updateMany({
+        const order = await prisma.order.findFirst({
           where: { OrderCode: Number(data.orderCode) },
-          data: { Status: 'PAID' },
         });
+        if (order) {
+          await new OrderRepository().updateStatus(order.OrderId, 'PAID');
+        }
       }
 
       return { success: true };
