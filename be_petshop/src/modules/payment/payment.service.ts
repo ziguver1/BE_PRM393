@@ -53,7 +53,7 @@ export class PaymentService {
       throw new AppError('Order not found.', 404);
     }
 
-    const orderCode = Number(String(Date.now()).slice(-6));
+    const orderCode = Number(String(Date.now()).slice(-9));
 
     await prisma.order.update({
       where: { OrderId: orderId },
