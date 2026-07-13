@@ -50,6 +50,12 @@ const controller = new ProductsController();
  *           type: string
  *           enum: [asc, desc]
  *           default: desc
+ *       - in: query
+ *         name: filters
+ *         schema:
+ *           type: string
+ *           example: "1,5,8"
+ *         description: Comma-separated filter option IDs for faceted search
  *     responses:
  *       200:
  *         description: Paginated product list.

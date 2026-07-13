@@ -45,21 +45,29 @@ model Product {
   VariantLabel String?       // e.g. "Khối lượng", "Kích cỡ", "Dung tích"
   Unit         String        @default("cái") // e.g. "túi", "lon", "cái", "chai", "hộp"
   CreatedAt    DateTime      @default(now())
+  UpdatedAt    DateTime      @updatedAt
   Category     Category      @relation(fields: [CategoryId], references: [CategoryId], onDelete: Cascade)
   CartItems    CartItem[]
   OrderDetails OrderDetail[]
+  ProductVariants ProductVariant[]
+  Images       ProductImage[]
+  Attributes   ProductAttribute[]
+  ProductFilters ProductFilter[]
 }
 
 model CartItem {
   CartItemId      Int     @id @default(autoincrement())
   UserId          Int
   ProductId       Int
+  ProductVariantId Int?
   SelectedVariant String  @default("")
   Quantity        Int
   User            User    @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
   Product         Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+  ProductVariant  ProductVariant? @relation(fields: [ProductVariantId], references: [ProductVariantId], onDelete: SetNull)
 
   @@unique([UserId, ProductId, SelectedVariant])
+  @@index([ProductVariantId])
 }
 
 model Order {
@@ -78,11 +86,21 @@ model OrderDetail {
   OrderDetailId   Int     @id @default(autoincrement())
   OrderId         Int
   ProductId       Int
+  ProductVariantId Int?
   SelectedVariant String  @default("")
+  ProductNameSnapshot String?
+  ProductImageSnapshot String?
+  VariantSkuSnapshot String?
+  VariantNameSnapshot String?
+  VariantImageSnapshot String?
+  VariantOptionsSnapshot String?
   Quantity        Int
   UnitPrice       Float
   Order           Order   @relation(fields: [OrderId], references: [OrderId], onDelete: Cascade)
   Product         Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+  ProductVariant  ProductVariant? @relation(fields: [ProductVariantId], references: [ProductVariantId], onDelete: SetNull)
+
+  @@index([ProductVariantId])
 }
 
 model Notification {
@@ -111,4 +129,63 @@ model Message {
   CreatedAt  DateTime @default(now())
   ChatRoom   ChatRoom @relation(fields: [ChatRoomId], references: [ChatRoomId], onDelete: Cascade, onUpdate: NoAction)
   Sender     User     @relation(fields: [SenderId], references: [UserId], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ProductVariant {
+  ProductVariantId Int    @id @default(autoincrement())
+  ProductId        Int
+  Name             String? // e.g. "1 Kg", "2 Kg", "Pack of 3"
+  Price            Float
+  Stock            Int
+  Unit             String? // e.g. "kg", "lon", "cái"
+  Attributes       Json?   // any extra attributes
+  Product          Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+  CartItems        CartItem[]
+  OrderDetails     OrderDetail[]
+}
+
+model FilterGroup {
+  FilterGroupId Int            @id @default(autoincrement())
+  Name          String         // VD: "Thương hiệu", "Độ tuổi", "Hương vị"
+  Description   String?
+  Options       FilterOption[]
+}
+
+model FilterOption {
+  FilterOptionId Int            @id @default(autoincrement())
+  FilterGroupId  Int
+  Value          String         // VD: "Royal Canin", "Chó con (Puppy)", "Vị cá hồi"
+  Group          FilterGroup    @relation(fields: [FilterGroupId], references: [FilterGroupId], onDelete: Cascade)
+  ProductFilters ProductFilter[]
+}
+
+model ProductFilter {
+  ProductId      Int
+  FilterOptionId Int
+  
+  Product        Product        @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+  FilterOption   FilterOption   @relation(fields: [FilterOptionId], references: [FilterOptionId], onDelete: Cascade)
+
+  // Khóa chính kép: Đảm bảo 1 sản phẩm không bị gán trùng 1 thẻ filter
+  @@id([ProductId, FilterOptionId]) 
+}
+
+// ==========================================
+// CÁC BẢNG BỔ TRỢ KHÁC (Đã khai báo ở Product nhưng chưa có model)
+// ==========================================
+
+model ProductImage {
+  ProductImageId Int     @id @default(autoincrement())
+  ProductId      Int
+  ImageUrl       String
+  IsPrimary      Boolean @default(false) // Xác định ảnh bìa chính
+  Product        Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+}
+
+model ProductAttribute {
+  ProductAttributeId Int     @id @default(autoincrement())
+  ProductId          Int
+  Name               String  // VD: "Thành phần", "Hướng dẫn sử dụng"
+  Value              String  @db.Text
+  Product            Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
 }

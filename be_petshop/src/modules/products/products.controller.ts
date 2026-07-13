@@ -18,11 +18,18 @@ export class ProductsController {
         maxPrice: searchParams.get('maxPrice') || undefined,
         sortBy: searchParams.get('sortBy') || undefined,
         sortOrder: searchParams.get('sortOrder') || undefined,
+        filters: searchParams.get('filters') || undefined,
       };
 
       const validated = productQuerySchema.parse(queryParams);
-      const result = await productService.getAll(validated);
-      return NextResponse.json(result, { status: 200 });
+      // Use new getAllProducts method if filters are provided, otherwise use getAll
+      if (validated.filters) {
+        const result = await productService.getAllProducts(queryParams);
+        return NextResponse.json(result, { status: 200 });
+      } else {
+        const result = await productService.getAll(validated);
+        return NextResponse.json(result, { status: 200 });
+      }
     } catch (error) {
       return handleError(error);
     }

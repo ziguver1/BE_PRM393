@@ -20,6 +20,7 @@ export const productQuerySchema = z.object({
   maxPrice: z.coerce.number().positive().optional(),
   sortBy: z.enum(['price', 'createdAt', 'name']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  filters: z.string().optional(),
 });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;

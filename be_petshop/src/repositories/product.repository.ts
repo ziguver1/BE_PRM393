@@ -1,7 +1,98 @@
 import prisma from '../lib/prisma';
 import { ProductQueryInput } from '../validators/product.validator';
 
+/**
+ * Interface for get products query parameters
+ */
+export interface GetProductParams {
+  page: number;
+  limit: number;
+  search?: string;
+  categoryId?: number;
+  filterOptionIds?: number[];
+}
+
+/**
+ * Interface for pagination response
+ */
+export interface GetProductsResponse {
+  data: any[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export class ProductRepository {
+  /**
+   * Get products with support for filtering, searching, and pagination
+   * Supports faceted search with multiple filter options
+   */
+  async getProducts(params: GetProductParams): Promise<GetProductsResponse> {
+    const { page, limit, search, categoryId, filterOptionIds } = params;
+    const skip = (page - 1) * limit;
+
+    // Build WHERE condition
+    const where: any = {};
+
+    // Filter by category if provided
+    if (categoryId) {
+      where.CategoryId = categoryId;
+    }
+
+    // Search by product name (case insensitive)
+    if (search) {
+      where.Name = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
+    // Apply faceted search filters
+    // All selected filter options must be present (AND logic)
+    if (filterOptionIds && filterOptionIds.length > 0) {
+      where.AND = filterOptionIds.map((filterId) => ({
+        ProductFilters: {
+          some: {
+            FilterOptionId: filterId,
+          },
+        },
+      }));
+    }
+
+    // Execute query in parallel
+    const [data, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          Category: true,
+          Images: true,
+          ProductVariants: true,
+          ProductFilters: {
+            include: {
+              FilterOption: {
+                include: {
+                  Group: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages,
+    };
+  }
+
   async findAll(params: ProductQueryInput) {
     const { page, limit, search, categoryId, minPrice, maxPrice, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
@@ -66,8 +157,30 @@ export class ProductRepository {
   }
 
   async create(data: any) {
+    // Support nested creation of structured variants (ProductVariant model)
+    const { Variants, ProductVariants, ...rest } = data;
+    const createData: any = { ...rest };
+
+    // keep JSON variants if provided (legacy / frontend can use this)
+    if (Variants !== undefined) createData.Variants = Variants;
+
+    // structured variants to create in separate table
+    const variantsToCreate = ProductVariants || Variants;
+    if (variantsToCreate && Array.isArray(variantsToCreate) && variantsToCreate.length > 0) {
+      createData.ProductVariants = {
+        create: variantsToCreate.map((v: any) => ({
+          Name: v.Name,
+          Price: v.Price,
+          Stock: v.Stock,
+          Unit: v.Unit,
+          Attributes: v.Attributes,
+        })),
+      };
+    }
+
     return prisma.product.create({
-      data,
+      data: createData,
+      include: { Category: true, ProductVariants: true },
     });
   }
 
