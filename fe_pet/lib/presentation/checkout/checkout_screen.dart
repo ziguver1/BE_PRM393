@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/url_helper.dart' as url_helper;
 import '../../providers/cart_provider.dart';
 import '../../data/models/cart_model.dart';
 
@@ -84,34 +85,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           await cartProvider.fetchCart(silent: true);
 
           if (mounted) {
-            // 3. Mở WebView thanh toán
-            final bool? isPaid = await context.push<bool>(
-              '/checkout/payment-webview',
-              extra: {
-                'checkoutUrl': checkoutUrl,
-                'orderId': orderId,
-              },
-            );
+            if (kIsWeb) {
+              // Redirect directly to the PayOS checkout URL on Web
+              url_helper.launchBrowser(checkoutUrl);
+            } else {
+              // 3. Mở WebView thanh toán trên Mobile
+              final bool? isPaid = await context.push<bool>(
+                '/checkout/payment-webview',
+                extra: {
+                  'checkoutUrl': checkoutUrl,
+                  'orderId': orderId,
+                },
+              );
 
-            if (mounted) {
-              if (isPaid == true) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Thanh toán đơn hàng thành công! 🎉'),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                context.go('/orders');
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Thanh toán đã bị hủy hoặc chưa hoàn tất.'),
-                    backgroundColor: AppColors.warning,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                context.go('/orders');
+              if (mounted) {
+                if (isPaid == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Thanh toán đơn hàng thành công! 🎉'),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  context.go('/orders');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Thanh toán đã bị hủy hoặc chưa hoàn tất.'),
+                      backgroundColor: AppColors.warning,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  context.go('/orders');
+                }
               }
             }
           }
@@ -212,7 +218,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.between,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
@@ -236,7 +242,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 }),
                                 const Divider(height: 24),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.between,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text(
                                       'Tổng cộng',

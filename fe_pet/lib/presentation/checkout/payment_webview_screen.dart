@@ -78,7 +78,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderSide: BorderSide.none,
+          side: BorderSide.none,
           borderRadius: BorderRadius.circular(16),
         ),
         title: const Text(

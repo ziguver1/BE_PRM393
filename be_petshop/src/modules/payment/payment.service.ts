@@ -13,9 +13,16 @@ export class PaymentService {
     if (!resolvedClientId || !resolvedApiKey || !resolvedChecksumKey) {
       this.payos = {
         paymentRequests: {
-          create: async (payload: any) => ({
-            checkoutUrl: `https://payos-demo.local/checkout?orderCode=${payload.orderCode}`,
-          }),
+          create: async (payload: any) => {
+            // Tự động cập nhật đơn hàng thành PAID để phục vụ mục đích test/demo không cần key thật
+            await prisma.order.updateMany({
+              where: { OrderCode: Number(payload.orderCode) },
+              data: { Status: 'PAID' },
+            });
+            return {
+              checkoutUrl: `${payload.returnUrl}?code=00&id=mock-transaction-id&cancel=false&status=PAID&orderCode=${payload.orderCode}`,
+            };
+          },
         },
         webhooks: {
           verify: async (body: any) => body.data,
