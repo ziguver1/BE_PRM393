@@ -561,22 +561,7 @@ class _CartScreenState extends State<CartScreen> {
                   onPressed: selectedCount == 0
                       ? null
                       : () {
-                          // Placeholder for future checkout screen implementation
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Thanh toán thành công 🎉'),
-                              content: const Text(
-                                'Cảm ơn bạn đã lựa chọn PawMart! Đây là bản demo tính năng Giỏ hàng. Tính năng thanh toán chi tiết sẽ được xây dựng sau.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Đóng'),
-                                ),
-                              ],
-                            ),
-                          );
+                          context.push('/checkout');
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,

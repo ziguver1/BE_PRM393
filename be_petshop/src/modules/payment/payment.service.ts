@@ -12,10 +12,14 @@ export class PaymentService {
 
     if (!resolvedClientId || !resolvedApiKey || !resolvedChecksumKey) {
       this.payos = {
-        createPaymentLink: async (payload: any) => ({
-          checkoutUrl: `https://payos-demo.local/checkout?orderCode=${payload.orderCode}`,
-        }),
-        verifyPaymentWebhookData: (body: any) => body,
+        paymentRequests: {
+          create: async (payload: any) => ({
+            checkoutUrl: `https://payos-demo.local/checkout?orderCode=${payload.orderCode}`,
+          }),
+        },
+        webhooks: {
+          verify: async (body: any) => body.data,
+        },
       } as unknown as PayOS;
       return;
     }
@@ -57,12 +61,12 @@ export class PaymentService {
       cancelUrl: cancelUrl || `${baseUrl}/api/payment/cancel`,
     };
 
-    const paymentLink = await this.payos.createPaymentLink(payload as any);
+    const paymentLink = await this.payos.paymentRequests.create(payload as any);
     return { checkoutUrl: paymentLink.checkoutUrl };
   }
 
   async verifyWebhook(body: any) {
-    const data = this.payos.verifyPaymentWebhookData(body as any);
+    const data = await this.payos.webhooks.verify(body as any);
     if (!data) {
       throw new AppError('Invalid PayOS webhook data.', 400);
     }
