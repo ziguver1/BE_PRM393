@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentService } from './payment.service';
 import { handleError } from '@/middleware/error.middleware';
+import prisma from '@/lib/prisma';
+import { OrderService } from '@/services/order.service';
 
 const paymentService = new PaymentService();
 
@@ -194,6 +196,19 @@ export class PaymentController {
     try {
       const { searchParams } = new URL(req.url);
       const orderCode = searchParams.get('orderCode') || '';
+
+      // Tự động chuyển trạng thái đơn hàng thành CANCELLED và hoàn kho
+      if (orderCode) {
+        const parsedCode = Number(orderCode);
+        if (!isNaN(parsedCode)) {
+          const order = await prisma.order.findFirst({
+            where: { OrderCode: parsedCode },
+          });
+          if (order && order.Status === 'PENDING') {
+            await new OrderService().updateStatus(order.OrderId, 'CANCELLED');
+          }
+        }
+      }
 
       const html = `
 <!DOCTYPE html>

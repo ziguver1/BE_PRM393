@@ -51,7 +51,9 @@ export class OrderRepository {
         await tx.product.update({
           where: { ProductId: item.ProductId },
           data: {
-            Stock: item.Product.Stock - item.Quantity,
+            Stock: {
+              decrement: item.Quantity,
+            },
           },
         });
       }
@@ -137,9 +139,36 @@ export class OrderRepository {
   }
 
   async updateStatus(orderId: number, status: OrderStatus) {
-    return prisma.order.update({
-      where: { OrderId: orderId },
-      data: { Status: status },
+    return prisma.$transaction(async (tx: any) => {
+      // 1. Lấy thông tin đơn hàng hiện tại
+      const order = await tx.order.findUnique({
+        where: { OrderId: orderId },
+        include: { OrderDetails: true },
+      });
+
+      if (!order) {
+        throw new AppError('Order not found.', 404);
+      }
+
+      // 2. Nếu chuyển từ PENDING sang CANCELLED, hoàn trả số lượng sản phẩm vào kho
+      if (order.Status === 'PENDING' && status === 'CANCELLED') {
+        for (const detail of order.OrderDetails) {
+          await tx.product.update({
+            where: { ProductId: detail.ProductId },
+            data: {
+              Stock: {
+                increment: detail.Quantity,
+              },
+            },
+          });
+        }
+      }
+
+      // 3. Cập nhật trạng thái đơn hàng
+      return tx.order.update({
+        where: { OrderId: orderId },
+        data: { Status: status },
+      });
     });
   }
 }
