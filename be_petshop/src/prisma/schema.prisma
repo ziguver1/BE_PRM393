@@ -42,6 +42,8 @@ model Product {
   Stock        Int
   ImageUrl     String?
   Variants     Json?         // e.g. [{"name": "1 Kg", "price": 85000, "stock": 50}]
+  VariantLabel String?       // e.g. "Khối lượng", "Kích cỡ", "Dung tích"
+  Unit         String        @default("cái") // e.g. "túi", "lon", "cái", "chai", "hộp"
   CreatedAt    DateTime      @default(now())
   Category     Category      @relation(fields: [CategoryId], references: [CategoryId], onDelete: Cascade)
   CartItems    CartItem[]

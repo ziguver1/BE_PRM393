@@ -39,6 +39,8 @@ class Product {
   final DateTime createdAt;
   final Category? category;
   final List<ProductVariant>? variants;
+  final String? variantLabel;
+  final String unit;
 
   const Product({
     required this.productId,
@@ -51,6 +53,8 @@ class Product {
     required this.createdAt,
     this.category,
     this.variants,
+    this.variantLabel,
+    this.unit = 'cái',
   });
 
   bool get isOutOfStock => stock <= 0;

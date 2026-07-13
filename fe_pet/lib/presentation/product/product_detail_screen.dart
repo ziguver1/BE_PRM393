@@ -408,7 +408,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                variantName != null ? '/ $variantName' : '/ sản phẩm',
+                variantName != null ? '/ $variantName' : '/ ${product.unit}',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: isDark
                       ? AppColors.textSecondaryDark
@@ -501,7 +501,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Chọn phân loại đóng bao / khối lượng',
+          'Chọn ${product.variantLabel ?? 'phân loại'}',
           style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),

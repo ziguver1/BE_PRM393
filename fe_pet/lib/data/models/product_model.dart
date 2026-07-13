@@ -13,6 +13,8 @@ class ProductModel extends Product {
     required super.createdAt,
     super.category,
     super.variants,
+    super.variantLabel,
+    super.unit = 'cái',
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,8 @@ class ProductModel extends Product {
               .map((v) => ProductVariant.fromJson(v as Map<String, dynamic>))
               .toList()
           : null,
+      variantLabel: json['VariantLabel'] as String?,
+      unit: json['Unit'] as String? ?? 'cái',
     );
   }
 
@@ -46,6 +50,8 @@ class ProductModel extends Product {
       'Stock': stock,
       'ImageUrl': imageUrl,
       'CreatedAt': createdAt.toIso8601String(),
+      'Unit': unit,
+      if (variantLabel != null) 'VariantLabel': variantLabel,
       if (category != null && category is CategoryModel)
         'Category': (category as CategoryModel).toJson(),
       if (variants != null)
