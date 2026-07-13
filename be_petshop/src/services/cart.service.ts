@@ -6,12 +6,44 @@ import { AppError } from '../middleware/error.middleware';
 const cartRepository = new CartRepository();
 const productRepository = new ProductRepository();
 
+// Helper to get variant price and stock
+function getVariantDetails(product: any, selectedVariant?: string) {
+  let price = product.Price;
+  let stock = product.Stock;
+  if (selectedVariant && product.Variants) {
+    const variants = typeof product.Variants === 'string'
+      ? JSON.parse(product.Variants)
+      : product.Variants;
+    const variant = Array.isArray(variants)
+      ? variants.find((v: any) => v.name === selectedVariant)
+      : null;
+    if (variant) {
+      if (variant.price !== undefined) price = variant.price;
+      if (variant.stock !== undefined) stock = variant.stock;
+    }
+  }
+  return { price, stock };
+}
+
 export class CartService {
   async getCart(userId: number) {
     const items = await cartRepository.findByUserId(userId);
-    const total = items.reduce((sum: number, item: any) => sum + item.Quantity * item.Product.Price, 0);
+    const mappedItems = items.map((item: any) => {
+      const { price, stock } = getVariantDetails(item.Product, item.SelectedVariant);
+      return {
+        ...item,
+        Product: {
+          ...item.Product,
+          Price: price,
+          Stock: stock,
+        }
+      };
+    });
+
+    const total = mappedItems.reduce((sum: number, item: any) => sum + item.Quantity * item.Product.Price, 0);
+
     return {
-      items,
+      items: mappedItems,
       total: Number(total.toFixed(2)),
     };
   }
@@ -22,18 +54,21 @@ export class CartService {
       throw new AppError('Product not found.', 404);
     }
 
-    const existing = await cartRepository.findItemByUserAndProduct(userId, input.ProductId);
+    const selectedVariant = input.SelectedVariant || "";
+    const { price, stock } = getVariantDetails(product, selectedVariant);
+
+    const existing = await cartRepository.findItemByUserAndProduct(userId, input.ProductId, selectedVariant);
     const newQty = existing ? existing.Quantity + input.Quantity : input.Quantity;
 
-    if (product.Stock < newQty) {
-      throw new AppError(`Cannot add product to cart. Requested quantity: ${newQty}, Available stock: ${product.Stock}`, 400);
+    if (stock < newQty) {
+      throw new AppError(`Cannot add product to cart. Requested quantity: ${newQty}, Available stock: ${stock}`, 400);
     }
 
     if (existing) {
       return cartRepository.updateItem(existing.CartItemId, newQty);
     }
 
-    return cartRepository.addItem(userId, input.ProductId, input.Quantity);
+    return cartRepository.addItem(userId, input.ProductId, input.Quantity, selectedVariant);
   }
 
   async updateItem(userId: number, cartItemId: number, input: UpdateCartItemInput) {
@@ -42,8 +77,10 @@ export class CartService {
       throw new AppError('Cart item not found.', 404);
     }
 
-    if (item.Product.Stock < input.Quantity) {
-      throw new AppError(`Cannot update cart. Requested quantity: ${input.Quantity}, Available stock: ${item.Product.Stock}`, 400);
+    const { price, stock } = getVariantDetails(item.Product, item.SelectedVariant);
+
+    if (stock < input.Quantity) {
+      throw new AppError(`Cannot update cart. Requested quantity: ${input.Quantity}, Available stock: ${stock}`, 400);
     }
 
     return cartRepository.updateItem(cartItemId, input.Quantity);

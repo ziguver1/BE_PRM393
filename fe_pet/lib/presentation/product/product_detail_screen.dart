@@ -54,7 +54,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   bool _isDescriptionExpanded = false;
   bool _isFavorite = false;
 
-  final List<String> _variants = ['500g', '1kg', '2kg', '5kg'];
 
   final List<Map<String, dynamic>> _nutritionHighlights = [
     {
@@ -119,7 +118,16 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
     setState(() => _isAddingToCart = true);
 
-    final success = await _cartProvider.addToCart(product.productId, _quantity);
+    final hasVariants = product.variants != null && product.variants!.isNotEmpty;
+    final selectedVariant = hasVariants && _selectedVariantIndex < product.variants!.length
+        ? product.variants![_selectedVariantIndex].name
+        : null;
+
+    final success = await _cartProvider.addToCart(
+      product.productId,
+      _quantity,
+      selectedVariant: selectedVariant,
+    );
 
     if (!mounted) return;
 
@@ -128,7 +136,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã thêm $_quantity sản phẩm vào giỏ hàng!'),
+          content: Text('Đã thêm $_quantity sản phẩm ${selectedVariant != null ? '($selectedVariant) ' : ''}vào giỏ hàng!'),
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
         ),
@@ -198,7 +206,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 const SizedBox(height: AppSpacing.xl),
 
                 // Variant Selection
-                _buildVariantSelection(isDark),
+                _buildVariantSelection(product, isDark),
                 const SizedBox(height: AppSpacing.xl),
 
                 // Description
@@ -280,6 +288,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   Widget _buildInfoBlock(Product product, bool isDark) {
+    final hasVariants = product.variants != null && product.variants!.isNotEmpty;
+    final price = hasVariants && _selectedVariantIndex < product.variants!.length
+        ? product.variants![_selectedVariantIndex].price
+        : product.price;
+    final stock = hasVariants && _selectedVariantIndex < product.variants!.length
+        ? product.variants![_selectedVariantIndex].stock
+        : product.stock;
+    final variantName = hasVariants && _selectedVariantIndex < product.variants!.length
+        ? product.variants![_selectedVariantIndex].name
+        : null;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.l),
       decoration: BoxDecoration(
@@ -303,7 +322,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -315,14 +334,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              if (product.stock <= 0)
+              if (stock <= 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
+                    color: AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -361,8 +380,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ),
               const Spacer(),
               Text(
-                product.stock > 0
-                    ? 'Còn ${product.stock} sản phẩm'
+                stock > 0
+                    ? 'Còn $stock sản phẩm'
                     : 'Hết hàng',
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
@@ -380,7 +399,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                _formatCurrency(product.price),
+                _formatCurrency(price),
                 style: AppTextStyles.h1.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -389,7 +408,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                '/ sản phẩm',
+                variantName != null ? '/ $variantName' : '/ sản phẩm',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: isDark
                       ? AppColors.textSecondaryDark
@@ -473,54 +492,57 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
   }
 
-  Widget _buildVariantSelection(bool isDark) {
+  Widget _buildVariantSelection(Product product, bool isDark) {
+    final hasVariants = product.variants != null && product.variants!.isNotEmpty;
+    if (!hasVariants) return const SizedBox.shrink();
+
+    final variants = product.variants!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Chọn khối lượng',
+          'Chọn phân loại đóng bao / khối lượng',
           style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: List.generate(_variants.length, (index) {
-            final variant = _variants[index];
+        Wrap(
+          spacing: 12,
+          runSpacing: 10,
+          children: List.generate(variants.length, (index) {
+            final variant = variants[index];
             final isSelected = _selectedVariantIndex == index;
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedVariantIndex = index;
-                  });
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedVariantIndex = index;
+                });
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark ? AppColors.surfaceDark : Colors.white),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
                     color: isSelected
                         ? AppColors.primary
-                        : (isDark ? AppColors.surfaceDark : Colors.white),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDark ? AppColors.borderDark : Colors.grey[300]!),
-                    ),
+                        : (isDark ? AppColors.borderDark : Colors.grey[300]!),
                   ),
-                  child: Text(
-                    variant,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimary),
-                    ),
+                ),
+                child: Text(
+                  variant.name,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary),
                   ),
                 ),
               ),

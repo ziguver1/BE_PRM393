@@ -6,7 +6,6 @@ import '../../core/network/api_client.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/url_helper.dart' as url_helper;
 import '../../providers/cart_provider.dart';
-import '../../data/models/cart_model.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});

@@ -101,7 +101,7 @@ class _PromotionCarouselState extends State<PromotionCarousel> {
                       ),
                       Positioned.fill(
                         child: Container(
-                          color: Colors.black.withValues(alpha: 0.45),
+                          color: Colors.black.withOpacity(0.45),
                         ),
                       ),
                       Padding(

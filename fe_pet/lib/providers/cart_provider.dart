@@ -95,13 +95,13 @@ class CartProvider extends ChangeNotifier {
   }
 
   // Add an item to the cart
-  Future<bool> addToCart(int productId, int quantity) async {
+  Future<bool> addToCart(int productId, int quantity, {String? selectedVariant}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _cartService.addToCart(productId, quantity);
+      await _cartService.addToCart(productId, quantity, selectedVariant: selectedVariant);
       // Fetch fresh cart data to sync
       await fetchCart(silent: true);
       return true;
@@ -133,6 +133,7 @@ class CartProvider extends ChangeNotifier {
           userId: item.userId,
           productId: item.productId,
           quantity: newQuantity,
+          selectedVariant: item.selectedVariant,
           product: item.product,
         );
       }

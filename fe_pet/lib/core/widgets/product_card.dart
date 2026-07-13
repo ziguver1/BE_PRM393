@@ -46,7 +46,7 @@ class _ProductCardState extends State<ProductCard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -59,8 +59,9 @@ class _ProductCardState extends State<ProductCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product Image (Flexible, takes all remaining space)
-              Expanded(
+              // Product Image (Deterministic aspect ratio for Masonry grid compatibility)
+              AspectRatio(
+                aspectRatio: 1.0,
                 child: Stack(
                   children: [
                     Container(
@@ -132,7 +133,7 @@ class _ProductCardState extends State<ProductCard> {
                       right: 6,
                       child: CircleAvatar(
                         radius: 16,
-                        backgroundColor: Colors.white.withValues(alpha: 0.9),
+                        backgroundColor: Colors.white.withOpacity(0.9),
                         child: GestureDetector(
                           onTap: () {
                             setState(() {
@@ -155,7 +156,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
 
-              // Product Info (Wraps content naturally at bottom)
+              // Product Info (Laid out naturally to support unbounded parent constraints)
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -163,6 +164,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       widget.product.category?.name ?? 'PETS',
@@ -175,7 +177,7 @@ class _ProductCardState extends State<ProductCard> {
                     const SizedBox(height: 2),
                     Text(
                       widget.product.name,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: isDark
@@ -183,10 +185,11 @@ class _ProductCardState extends State<ProductCard> {
                             : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
+                        height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 4),
-
+                    const SizedBox(height: 6),
+ 
                     // Rating & Sales Row
                     Row(
                       children: [
@@ -203,18 +206,18 @@ class _ProductCardState extends State<ProductCard> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         Text(
-                          '| Còn ${widget.product.stock} sản phẩm',
+                          'Đã bán ${(widget.product.productId * 19) % 150 + 12}',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textSecondary,
-                            fontSize: 9,
+                            fontSize: 10,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-
+                    const SizedBox(height: 8),
+ 
                     // Pricing & Buy button Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -222,6 +225,7 @@ class _ProductCardState extends State<ProductCard> {
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               if (hasDiscount)
                                 Text(

@@ -41,6 +41,7 @@ model Product {
   Price        Float
   Stock        Int
   ImageUrl     String?
+  Variants     Json?         // e.g. [{"name": "1 Kg", "price": 85000, "stock": 50}]
   CreatedAt    DateTime      @default(now())
   Category     Category      @relation(fields: [CategoryId], references: [CategoryId], onDelete: Cascade)
   CartItems    CartItem[]
@@ -48,14 +49,15 @@ model Product {
 }
 
 model CartItem {
-  CartItemId Int     @id @default(autoincrement())
-  UserId     Int
-  ProductId  Int
-  Quantity   Int
-  User       User    @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
-  Product    Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+  CartItemId      Int     @id @default(autoincrement())
+  UserId          Int
+  ProductId       Int
+  SelectedVariant String  @default("")
+  Quantity        Int
+  User            User    @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
+  Product         Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
 
-  @@unique([UserId, ProductId])
+  @@unique([UserId, ProductId, SelectedVariant])
 }
 
 model Order {
@@ -71,13 +73,14 @@ model Order {
 }
 
 model OrderDetail {
-  OrderDetailId Int     @id @default(autoincrement())
-  OrderId       Int
-  ProductId     Int
-  Quantity      Int
-  UnitPrice     Float
-  Order         Order   @relation(fields: [OrderId], references: [OrderId], onDelete: Cascade)
-  Product       Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+  OrderDetailId   Int     @id @default(autoincrement())
+  OrderId         Int
+  ProductId       Int
+  SelectedVariant String  @default("")
+  Quantity        Int
+  UnitPrice       Float
+  Order           Order   @relation(fields: [OrderId], references: [OrderId], onDelete: Cascade)
+  Product         Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
 }
 
 model Notification {

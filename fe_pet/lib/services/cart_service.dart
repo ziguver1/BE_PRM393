@@ -35,12 +35,17 @@ class CartService {
   }
 
   // Add a product to the cart
-  Future<CartItem> addToCart(int productId, int quantity) async {
+  Future<CartItem> addToCart(int productId, int quantity, {String? selectedVariant}) async {
     try {
       final headers = await _getAuthHeaders();
       final response = await _apiClient.dio.post(
         '/cart/items',
-        data: {'ProductId': productId, 'Quantity': quantity},
+        data: {
+          'ProductId': productId,
+          'Quantity': quantity,
+          if (selectedVariant != null && selectedVariant.isNotEmpty)
+            'SelectedVariant': selectedVariant,
+        },
         options: Options(headers: headers),
       );
       if (response.statusCode == 201) {

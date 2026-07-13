@@ -19,23 +19,25 @@ export class CartRepository {
     });
   }
 
-  async findItemByUserAndProduct(userId: number, productId: number) {
+  async findItemByUserAndProduct(userId: number, productId: number, selectedVariant: string = "") {
     return prisma.cartItem.findUnique({
       where: {
-        UserId_ProductId: {
+        UserId_ProductId_SelectedVariant: {
           UserId: userId,
           ProductId: productId,
+          SelectedVariant: selectedVariant,
         },
       },
     });
   }
 
-  async addItem(userId: number, productId: number, quantity: number) {
+  async addItem(userId: number, productId: number, quantity: number, selectedVariant: string = "") {
     return prisma.cartItem.create({
       data: {
         UserId: userId,
         ProductId: productId,
         Quantity: quantity,
+        SelectedVariant: selectedVariant,
       },
       include: {
         Product: true,

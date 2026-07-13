@@ -12,6 +12,7 @@ class ProductModel extends Product {
     super.imageUrl,
     required super.createdAt,
     super.category,
+    super.variants,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +27,11 @@ class ProductModel extends Product {
       createdAt: DateTime.parse(json['CreatedAt'] as String),
       category: json['Category'] != null
           ? CategoryModel.fromJson(json['Category'] as Map<String, dynamic>)
+          : null,
+      variants: json['Variants'] != null
+          ? (json['Variants'] as List)
+              .map((v) => ProductVariant.fromJson(v as Map<String, dynamic>))
+              .toList()
           : null,
     );
   }
@@ -42,6 +48,8 @@ class ProductModel extends Product {
       'CreatedAt': createdAt.toIso8601String(),
       if (category != null && category is CategoryModel)
         'Category': (category as CategoryModel).toJson(),
+      if (variants != null)
+        'Variants': variants!.map((v) => v.toJson()).toList(),
     };
   }
 }

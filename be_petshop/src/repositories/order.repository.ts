@@ -3,6 +3,24 @@ import { AppError } from '../middleware/error.middleware';
 import { OrderStatus } from '../validators/order.validator';
 import { PayOS } from '@payos/node';
 
+function getVariantDetails(product: any, selectedVariant?: string) {
+  let price = product.Price;
+  let stock = product.Stock;
+  if (selectedVariant && product.Variants) {
+    const variants = typeof product.Variants === 'string'
+      ? JSON.parse(product.Variants)
+      : product.Variants;
+    const variant = Array.isArray(variants)
+      ? variants.find((v: any) => v.name === selectedVariant)
+      : null;
+    if (variant) {
+      if (variant.price !== undefined) price = variant.price;
+      if (variant.stock !== undefined) stock = variant.stock;
+    }
+  }
+  return { price, stock };
+}
+
 export class OrderRepository {
   async createOrder(userId: number, shippingAddress: string): Promise<any> {
     return prisma.$transaction(async (tx: any) => {
@@ -20,12 +38,31 @@ export class OrderRepository {
         });
         
         for (const detail of details) {
+          const product = await tx.product.findUnique({
+            where: { ProductId: detail.ProductId },
+          });
+
+          let updatedVariants = product?.Variants;
+          if (product && detail.SelectedVariant && product.Variants) {
+            const variants = typeof product.Variants === 'string'
+              ? JSON.parse(product.Variants)
+              : product.Variants;
+            if (Array.isArray(variants)) {
+              const variant = variants.find((v: any) => v.name === detail.SelectedVariant);
+              if (variant) {
+                variant.stock = (variant.stock || 0) + detail.Quantity;
+              }
+              updatedVariants = variants;
+            }
+          }
+
           await tx.product.update({
             where: { ProductId: detail.ProductId },
             data: {
               Stock: {
                 increment: detail.Quantity,
               },
+              Variants: updatedVariants || undefined,
             },
           });
         }
@@ -49,10 +86,11 @@ export class OrderRepository {
       // 2. Validate stock and calculate totals
       let totalAmount = 0;
       for (const item of cartItems) {
-        if (item.Product.Stock < item.Quantity) {
-          throw new AppError(`Insufficient stock for product: ${item.Product.Name}. Available: ${item.Product.Stock}`, 400);
+        const { price, stock } = getVariantDetails(item.Product, item.SelectedVariant);
+        if (stock < item.Quantity) {
+          throw new AppError(`Insufficient stock for product: ${item.Product.Name} (${item.SelectedVariant || 'cái'}). Available: ${stock}`, 400);
         }
-        totalAmount += item.Product.Price * item.Quantity;
+        totalAmount += price * item.Quantity;
       }
       totalAmount = Number(totalAmount.toFixed(2));
 
@@ -68,15 +106,32 @@ export class OrderRepository {
 
       // 4. Create order line details and decrement product stock
       for (const item of cartItems) {
+        const { price, stock } = getVariantDetails(item.Product, item.SelectedVariant);
+
         await tx.orderDetail.create({
           data: {
             OrderId: order.OrderId,
             ProductId: item.ProductId,
+            SelectedVariant: item.SelectedVariant,
             Quantity: item.Quantity,
-            UnitPrice: item.Product.Price,
+            UnitPrice: price,
           },
         });
 
+        // Compute updated variants JSON
+        let updatedVariants = item.Product.Variants;
+        if (item.SelectedVariant && item.Product.Variants) {
+          const variants = typeof item.Product.Variants === 'string'
+            ? JSON.parse(item.Product.Variants)
+            : item.Product.Variants;
+          if (Array.isArray(variants)) {
+            const variant = variants.find((v: any) => v.name === item.SelectedVariant);
+            if (variant) {
+              variant.stock = Math.max(0, (variant.stock || 0) - item.Quantity);
+            }
+            updatedVariants = variants;
+          }
+        }
 
         await tx.product.update({
           where: { ProductId: item.ProductId },
@@ -84,6 +139,7 @@ export class OrderRepository {
             Stock: {
               decrement: item.Quantity,
             },
+            Variants: updatedVariants || undefined,
           },
         });
       }
@@ -180,12 +236,31 @@ export class OrderRepository {
       // 2. Nếu chuyển từ PENDING sang CANCELLED, hoàn trả số lượng sản phẩm vào kho
       if (order.Status === 'PENDING' && status === 'CANCELLED') {
         for (const detail of order.OrderDetails) {
+          const product = await tx.product.findUnique({
+            where: { ProductId: detail.ProductId },
+          });
+
+          let updatedVariants = product?.Variants;
+          if (product && detail.SelectedVariant && product.Variants) {
+            const variants = typeof product.Variants === 'string'
+              ? JSON.parse(product.Variants)
+              : product.Variants;
+            if (Array.isArray(variants)) {
+              const variant = variants.find((v: any) => v.name === detail.SelectedVariant);
+              if (variant) {
+                variant.stock = (variant.stock || 0) + detail.Quantity;
+              }
+              updatedVariants = variants;
+            }
+          }
+
           await tx.product.update({
             where: { ProductId: detail.ProductId },
             data: {
               Stock: {
                 increment: detail.Quantity,
               },
+              Variants: updatedVariants || undefined,
             },
           });
         }

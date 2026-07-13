@@ -41,7 +41,7 @@ class FeaturedProductsList extends ConsumerWidget {
           data: (products) {
             if (products.isEmpty) return const SizedBox.shrink();
             return SizedBox(
-              height: 230,
+              height: 295,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -61,7 +61,7 @@ class FeaturedProductsList extends ConsumerWidget {
             );
           },
           loading: () => SizedBox(
-            height: 230,
+            height: 295,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),

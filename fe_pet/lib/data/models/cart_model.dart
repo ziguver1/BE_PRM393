@@ -36,6 +36,7 @@ class CartItem {
   final int userId;
   final int productId;
   final int quantity;
+  final String selectedVariant;
   final CartProduct product;
 
   CartItem({
@@ -43,6 +44,7 @@ class CartItem {
     required this.userId,
     required this.productId,
     required this.quantity,
+    required this.selectedVariant,
     required this.product,
   });
 
@@ -52,6 +54,7 @@ class CartItem {
       userId: json['UserId'] as int? ?? 0,
       productId: json['ProductId'] as int? ?? 0,
       quantity: json['Quantity'] as int? ?? 0,
+      selectedVariant: json['SelectedVariant'] as String? ?? '',
       product: CartProduct.fromJson(json['Product'] as Map<String, dynamic>? ?? {}),
     );
   }
@@ -62,6 +65,7 @@ class CartItem {
       'UserId': userId,
       'ProductId': productId,
       'Quantity': quantity,
+      'SelectedVariant': selectedVariant,
       'Product': product.toJson(),
     };
   }
