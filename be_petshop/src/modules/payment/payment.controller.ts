@@ -323,9 +323,14 @@ export class PaymentController {
 
   async webhook(req: NextRequest) {
     try {
-      const body = await req.json();
-      await paymentService.verifyWebhook(body);
-      return NextResponse.json({ success: true }, { status: 200 });
+      let body: any = {};
+      try {
+        body = await req.json();
+      } catch (err) {
+        // Im lặng nếu request body rỗng hoặc không phải JSON (tiện cho test/kiểm tra sống)
+      }
+      const result = await paymentService.verifyWebhook(body);
+      return NextResponse.json(result, { status: 200 });
     } catch (error) {
       return handleError(error);
     }

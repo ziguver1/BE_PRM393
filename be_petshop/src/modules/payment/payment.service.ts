@@ -87,16 +87,11 @@ export class PaymentService {
       }
 
       return { success: true };
-    } catch (error) {
-      // Hỗ trợ vượt qua bước kiểm tra kết nối (validation/test webhook) của PayOS khi đăng ký
-      if (
-        body?.desc === 'confirm' ||
-        body?.data?.orderCode === 123 ||
-        body?.desc?.toLowerCase().includes('test')
-      ) {
-        return { success: true };
-      }
-      throw error;
+    } catch (error: any) {
+      console.error('PayOS Webhook validation error:', error);
+      // Trả về success: false thay vì throw error để controller trả về HTTP 200 OK.
+      // Điều này đảm bảo PayOS luôn đăng ký Webhook URL thành công.
+      return { success: false, error: error?.message || 'Webhook verification skipped' };
     }
   }
 }
