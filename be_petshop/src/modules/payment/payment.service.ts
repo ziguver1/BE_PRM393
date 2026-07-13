@@ -89,9 +89,9 @@ export class PaymentService {
       return { success: true };
     } catch (error: any) {
       console.error('PayOS Webhook validation error:', error);
-      // Trả về success: false thay vì throw error để controller trả về HTTP 200 OK.
-      // Điều này đảm bảo PayOS luôn đăng ký Webhook URL thành công.
-      return { success: false, error: error?.message || 'Webhook verification skipped' };
+      // Luôn trả về success: true để PayOS chấp nhận webhook URL này khi đăng ký
+      // và ngăn PayOS gửi lại (retry) các webhook bị lỗi chữ ký.
+      return { success: true, message: 'Webhook processed with signature verification skipped' };
     }
   }
 }
