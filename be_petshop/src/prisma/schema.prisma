@@ -60,10 +60,11 @@ model CartItem {
 
 model Order {
   OrderId         Int           @id @default(autoincrement())
+  OrderCode       Int?          @unique // Bắt buộc cho PayOS (Để optional ? để không lỗi data cũ)
   UserId          Int
   TotalAmount     Float
   ShippingAddress String
-  Status          String        @default("PENDING") // PENDING, PROCESSING, SHIPPING, DELIVERED, CANCELLED
+  Status          String        @default("PENDING") // PENDING, PROCESSING, SHIPPING, DELIVERED, PAID, CANCELLED
   CreatedAt       DateTime      @default(now())
   User            User          @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
   OrderDetails    OrderDetail[]

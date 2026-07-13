@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../data/pet_knowledge_data.dart';
-import '../providers/auth_provider.dart';
+import '../presentation/auth/providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import 'chat_screen.dart';
-import 'cart_screen.dart';
+import '../presentation/cart/cart_screen.dart' as presentation_cart_screen;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -22,8 +24,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final email = authProvider.currentUser?.email ?? 'User';
+    final container = ProviderScope.containerOf(context);
+    final authState = container.read(authNotifierProvider);
+    final email = authState.user?.email ?? 'User';
     final username = email.split('@').first;
 
     // Lấy 4 sản phẩm nổi bật để hiển thị ở trang chủ
@@ -68,7 +71,9 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.2,
+                              ),
                               child: const Icon(
                                 Icons.person,
                                 color: Colors.white,
@@ -103,19 +108,29 @@ class HomeScreen extends StatelessWidget {
                             Consumer<CartProvider>(
                               builder: (context, cartProvider, _) {
                                 return Badge(
-                                  label: Text(cartProvider.totalItems.toString()),
+                                  label: Text(
+                                    cartProvider.totalItems.toString(),
+                                  ),
                                   isLabelVisible: cartProvider.totalItems > 0,
                                   backgroundColor: Colors.red,
                                   child: IconButton(
                                     onPressed: () {
                                       Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (_) => const CartScreen()),
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const presentation_cart_screen.CartScreen(),
+                                        ),
                                       );
                                     },
-                                    icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white),
+                                    icon: const Icon(
+                                      Icons.shopping_cart_rounded,
+                                      color: Colors.white,
+                                    ),
                                     style: IconButton.styleFrom(
-                                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                      backgroundColor: Colors.white.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       padding: const EdgeInsets.all(10),
                                     ),
                                   ),
@@ -125,11 +140,22 @@ class HomeScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             IconButton(
                               onPressed: () async {
-                                await authProvider.logout();
+                                final authNotifier = container.read(
+                                  authNotifierProvider.notifier,
+                                );
+                                await authNotifier.logout();
+                                if (context.mounted) {
+                                  context.go('/login');
+                                }
                               },
-                              icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                              icon: const Icon(
+                                Icons.logout_rounded,
+                                color: Colors.white,
+                              ),
                               style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.15,
+                                ),
                                 padding: const EdgeInsets.all(10),
                               ),
                             ),
@@ -150,7 +176,10 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     // Thanh tìm kiếm mô phỏng cao cấp
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
@@ -168,16 +197,29 @@ class HomeScreen extends StatelessWidget {
                           // Bấm tìm kiếm tự động chuyển sang AI tư vấn
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const ChatScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const ChatScreen(),
+                            ),
                           );
                         },
                         decoration: InputDecoration(
                           hintText: 'Tìm hạt, cát vệ sinh, đồ chơi...',
-                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                          prefixIcon: Icon(Icons.search_rounded, color: Colors.orange.shade700),
-                          suffixIcon: Icon(Icons.tune_rounded, color: Colors.grey.shade400),
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: Colors.orange.shade700,
+                          ),
+                          suffixIcon: Icon(
+                            Icons.tune_rounded,
+                            color: Colors.grey.shade400,
+                          ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -203,10 +245,26 @@ class HomeScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildCategoryItem('Thức ăn', Icons.restaurant_rounded, Colors.orange),
-                        _buildCategoryItem('Đồ chơi', Icons.sports_tennis_rounded, Colors.green),
-                        _buildCategoryItem('Chăm sóc', Icons.favorite_rounded, Colors.blue),
-                        _buildCategoryItem('Phụ kiện', Icons.pets_rounded, Colors.purple),
+                        _buildCategoryItem(
+                          'Thức ăn',
+                          Icons.restaurant_rounded,
+                          Colors.orange,
+                        ),
+                        _buildCategoryItem(
+                          'Đồ chơi',
+                          Icons.sports_tennis_rounded,
+                          Colors.green,
+                        ),
+                        _buildCategoryItem(
+                          'Chăm sóc',
+                          Icons.favorite_rounded,
+                          Colors.blue,
+                        ),
+                        _buildCategoryItem(
+                          'Phụ kiện',
+                          Icons.pets_rounded,
+                          Colors.purple,
+                        ),
                       ],
                     ),
                   ],
@@ -232,12 +290,13 @@ class HomeScreen extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       itemCount: featuredProducts.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.72,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.72,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                       itemBuilder: (context, index) {
                         final product = featuredProducts[index];
                         return _buildProductCard(context, product);
@@ -298,11 +357,7 @@ class HomeScreen extends StatelessWidget {
             color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 26,
-          ),
+          child: Icon(icon, color: color, size: 26),
         ),
         const SizedBox(height: 8),
         Text(
@@ -362,7 +417,10 @@ class HomeScreen extends StatelessWidget {
               children: [
                 // Nhãn thương hiệu
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(4),
@@ -404,9 +462,13 @@ class HomeScreen extends StatelessWidget {
                     ),
                     InkWell(
                       onTap: () async {
-                        final dbProductId = int.tryParse(product.id.replaceAll(RegExp(r'\D'), '')) ?? 1;
+                        final dbProductId =
+                            int.tryParse(
+                              product.id.replaceAll(RegExp(r'\D'), ''),
+                            ) ??
+                            1;
                         final cartProvider = context.read<CartProvider>();
-                        
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Row(
@@ -414,7 +476,10 @@ class HomeScreen extends StatelessWidget {
                                 const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Text('Đang thêm "${product.name}" vào giỏ...'),
@@ -426,13 +491,18 @@ class HomeScreen extends StatelessWidget {
                           ),
                         );
 
-                        final success = await cartProvider.addToCart(dbProductId, 1);
+                        final success = await cartProvider.addToCart(
+                          dbProductId,
+                          1,
+                        );
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           if (success) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Đã thêm "${product.name}" vào giỏ hàng!'),
+                                content: Text(
+                                  'Đã thêm "${product.name}" vào giỏ hàng!',
+                                ),
                                 backgroundColor: Colors.green.shade700,
                                 behavior: SnackBarBehavior.floating,
                                 duration: const Duration(seconds: 1),
@@ -441,7 +511,10 @@ class HomeScreen extends StatelessWidget {
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(cartProvider.errorMessage ?? 'Không thể thêm vào giỏ'),
+                                content: Text(
+                                  cartProvider.errorMessage ??
+                                      'Không thể thêm vào giỏ',
+                                ),
                                 backgroundColor: Colors.red.shade700,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -471,4 +544,4 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-}
+}

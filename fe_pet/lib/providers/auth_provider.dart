@@ -1,18 +1,22 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 
+import '../core/network/api_client.dart';
 import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
-  final Dio _authDio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    headers: {'Content-Type': 'application/json'},
-  ));
+  final Dio _authDio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
 
   bool isLoading = false;
   String? errorMessage;
@@ -23,6 +27,19 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => currentUser != null && _backendToken != null;
 
   AuthProvider() {
+    ApiClient().init(
+      tokenGetter: () => _backendToken,
+      refreshTokenGetter: () => null,
+      onTokenRefreshed: (access, refresh) async {
+        _backendToken = access;
+        return true;
+      },
+      onLogoutRequired: () {
+        _backendToken = null;
+        notifyListeners();
+      },
+    );
+
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (user == null) {
         _backendToken = null;
@@ -45,16 +62,17 @@ class AuthProvider extends ChangeNotifier {
     return 'http://localhost:3000/api';
   }
 
-  Future<void> _syncWithBackend(String email, String password, {String? fullName}) async {
+  Future<void> _syncWithBackend(
+    String email,
+    String password, {
+    String? fullName,
+  }) async {
     final baseUrl = _getBackendUrl();
     try {
       debugPrint('Syncing with backend: $baseUrl/auth/login for $email');
       final response = await _authDio.post(
         '$baseUrl/auth/login',
-        data: {
-          'Email': email,
-          'Password': password,
-        },
+        data: {'Email': email, 'Password': password},
       );
       if (response.statusCode == 200) {
         _backendToken = response.data['accessToken'];
@@ -82,7 +100,9 @@ class AuthProvider extends ChangeNotifier {
           debugPrint('Backend registration error: $regErr');
         }
       } else {
-        debugPrint('Backend login error (${e.response?.statusCode}): ${e.message}');
+        debugPrint(
+          'Backend login error (${e.response?.statusCode}): ${e.message}',
+        );
       }
     } catch (e) {
       debugPrint('Unexpected backend sync error: $e');
@@ -95,10 +115,7 @@ class AuthProvider extends ChangeNotifier {
       errorMessage = null;
       notifyListeners();
 
-      await _authService.login(
-        email: email,
-        password: password,
-      );
+      await _authService.login(email: email, password: password);
 
       // Sync with our backend API
       await _syncWithBackend(email, password);
@@ -122,10 +139,7 @@ class AuthProvider extends ChangeNotifier {
       errorMessage = null;
       notifyListeners();
 
-      await _authService.register(
-        email: email,
-        password: password,
-      );
+      await _authService.register(email: email, password: password);
 
       // Register and login to our backend API
       await _syncWithBackend(email, password);

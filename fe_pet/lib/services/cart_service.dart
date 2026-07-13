@@ -1,14 +1,28 @@
 import 'package:dio/dio.dart';
-import '../core/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../core/network/api_client.dart';
 import '../data/models/cart_model.dart';
 
 class CartService {
   final ApiClient _apiClient = ApiClient();
 
+  Future<Map<String, dynamic>> _getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    if (token == null || token.isEmpty) {
+      return {};
+    }
+    return {'Authorization': 'Bearer $token'};
+  }
+
   // Fetch current shopping cart
   Future<CartResponse> getCart() async {
     try {
-      final response = await _apiClient.dio.get('/cart');
+      final headers = await _getAuthHeaders();
+      final response = await _apiClient.dio.get(
+        '/cart',
+        options: Options(headers: headers),
+      );
       if (response.statusCode == 200) {
         return CartResponse.fromJson(response.data as Map<String, dynamic>);
       }
@@ -23,12 +37,11 @@ class CartService {
   // Add a product to the cart
   Future<CartItem> addToCart(int productId, int quantity) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await _apiClient.dio.post(
         '/cart/items',
-        data: {
-          'ProductId': productId,
-          'Quantity': quantity,
-        },
+        data: {'ProductId': productId, 'Quantity': quantity},
+        options: Options(headers: headers),
       );
       if (response.statusCode == 201) {
         return CartItem.fromJson(response.data as Map<String, dynamic>);
@@ -44,11 +57,11 @@ class CartService {
   // Update item quantity in the cart
   Future<CartItem> updateCartItem(int cartItemId, int quantity) async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await _apiClient.dio.put(
         '/cart/items/$cartItemId',
-        data: {
-          'Quantity': quantity,
-        },
+        data: {'Quantity': quantity},
+        options: Options(headers: headers),
       );
       if (response.statusCode == 200) {
         return CartItem.fromJson(response.data as Map<String, dynamic>);
@@ -64,7 +77,11 @@ class CartService {
   // Delete an item from the cart
   Future<void> removeCartItem(int cartItemId) async {
     try {
-      final response = await _apiClient.dio.delete('/cart/items/$cartItemId');
+      final headers = await _getAuthHeaders();
+      final response = await _apiClient.dio.delete(
+        '/cart/items/$cartItemId',
+        options: Options(headers: headers),
+      );
       if (response.statusCode != 200) {
         throw Exception('Không thể xóa sản phẩm khỏi giỏ hàng');
       }

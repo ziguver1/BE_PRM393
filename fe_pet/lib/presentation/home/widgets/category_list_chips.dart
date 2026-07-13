@@ -68,7 +68,10 @@ class CategoryListChips extends ConsumerWidget {
                       ),
                       borderRadius: BorderRadius.circular(30),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(30),

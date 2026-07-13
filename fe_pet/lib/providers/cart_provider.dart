@@ -8,14 +8,62 @@ class CartProvider extends ChangeNotifier {
   CartResponse? _cart;
   bool _isLoading = false;
   String? _errorMessage;
+  final Set<int> _selectedCartItemIds = <int>{};
 
   CartResponse? get cart => _cart;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  Set<int> get selectedCartItemIds => Set.unmodifiable(_selectedCartItemIds);
 
   int get totalItems {
     if (_cart == null) return 0;
     return _cart!.items.fold(0, (sum, item) => sum + item.quantity);
+  }
+
+  bool get allSelected {
+    if (_cart == null || _cart!.items.isEmpty) return false;
+    return _cart!.items.every(
+      (item) => _selectedCartItemIds.contains(item.cartItemId),
+    );
+  }
+
+  bool isSelected(int cartItemId) => _selectedCartItemIds.contains(cartItemId);
+
+  double get selectedTotal {
+    if (_cart == null) return 0;
+    return _cart!.items
+        .where((item) => _selectedCartItemIds.contains(item.cartItemId))
+        .fold(0.0, (sum, item) {
+          return sum + (item.quantity * item.product.price);
+        });
+  }
+
+  int get selectedItemCount => _selectedCartItemIds.length;
+
+  void toggleSelectItem(int cartItemId) {
+    if (_selectedCartItemIds.contains(cartItemId)) {
+      _selectedCartItemIds.remove(cartItemId);
+    } else {
+      _selectedCartItemIds.add(cartItemId);
+    }
+    notifyListeners();
+  }
+
+  void toggleSelectAll() {
+    if (_cart == null) return;
+    if (allSelected) {
+      _selectedCartItemIds.clear();
+    } else {
+      for (final item in _cart!.items) {
+        _selectedCartItemIds.add(item.cartItemId);
+      }
+    }
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _selectedCartItemIds.clear();
+    notifyListeners();
   }
 
   // Load the shopping cart from backend
@@ -28,6 +76,15 @@ class CartProvider extends ChangeNotifier {
 
     try {
       _cart = await _cartService.getCart();
+      if (_cart != null) {
+        final existingIds = _cart!.items.map((item) => item.cartItemId).toSet();
+        _selectedCartItemIds.retainWhere(existingIds.contains);
+        if (_selectedCartItemIds.isEmpty && _cart!.items.isNotEmpty) {
+          for (final item in _cart!.items) {
+            _selectedCartItemIds.add(item.cartItemId);
+          }
+        }
+      }
       _errorMessage = null;
     } catch (e) {
       _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -112,8 +169,10 @@ class CartProvider extends ChangeNotifier {
     final previousCart = _cart;
 
     // Optimistically remove from local state
-    final updatedItems = _cart!.items.where((item) => item.cartItemId != cartItemId).toList();
-    
+    final updatedItems = _cart!.items
+        .where((item) => item.cartItemId != cartItemId)
+        .toList();
+
     // Recalculate total total
     double newTotal = updatedItems.fold(
       0.0,

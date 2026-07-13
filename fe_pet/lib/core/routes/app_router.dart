@@ -17,6 +17,7 @@ import '../../presentation/profile/change_password_screen.dart';
 import '../../presentation/category/category_detail_screen.dart';
 import '../../presentation/product/product_detail_screen.dart';
 import '../../presentation/checkout/checkout_screen.dart';
+import '../../presentation/checkout/payment_webview_screen.dart';
 import '../../presentation/order/order_history_screen.dart';
 import '../../presentation/notifications/notifications_screen.dart';
 import '../../presentation/chat/chat_screen.dart';
@@ -139,6 +140,18 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/checkout',
         builder: (context, state) => const CheckoutScreen(),
+      ),
+      GoRoute(
+        path: '/checkout/payment-webview',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final checkoutUrl = extra['checkoutUrl'] as String;
+          final orderId = extra['orderId'] as int;
+          return PaymentWebViewScreen(
+            checkoutUrl: checkoutUrl,
+            orderId: orderId,
+          );
+        },
       ),
       GoRoute(
         path: '/orders',

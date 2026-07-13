@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart' as provider;
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../domain/entities/product.dart';
 import '../../core/configs/providers.dart';
+import '../../providers/cart_provider.dart';
 
 // Provider to fetch single product details
-final productDetailProvider = FutureProvider.family<Product, int>((ref, id) async {
+final productDetailProvider = FutureProvider.family<Product, int>((
+  ref,
+  id,
+) async {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getProductById(id);
 });
@@ -18,18 +23,34 @@ final productDetailProvider = FutureProvider.family<Product, int>((ref, id) asyn
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final int productId;
 
-  const ProductDetailScreen({
-    super.key,
-    required this.productId,
-  });
+  const ProductDetailScreen({super.key, required this.productId});
 
   @override
-  ConsumerState<ProductDetailScreen> createState() => _ProductDetailScreenState();
+  ConsumerState<ProductDetailScreen> createState() =>
+      _ProductDetailScreenState();
 }
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   int _quantity = 1;
   int _selectedVariantIndex = 0;
+  bool _isAddingToCart = false;
+  late final CartProvider _cartProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _cartProvider = CartProvider();
+  }
+
+  String _formatCurrency(double value) {
+    final raw = value.toStringAsFixed(0);
+    final chars = raw.split('');
+    for (var i = chars.length - 3; i > 0; i -= 3) {
+      chars.insert(i, '.');
+    }
+    return '${chars.join()}đ';
+  }
+
   bool _isDescriptionExpanded = false;
   bool _isFavorite = false;
 
@@ -67,10 +88,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       productId: widget.productId,
       categoryId: 1,
       name: 'Thức Ăn Hạt Hữu Cơ Cao Cấp Royal Canin cho Cún',
-      description: 'Thức ăn hạt hữu cơ dinh dưỡng chất lượng cao cung cấp đầy đủ dưỡng chất cần thiết cho sự phát triển toàn diện của thú cưng của bạn. Công thức đặc biệt được nghiên cứu bởi các chuyên gia thú y hàng đầu giúp lông bóng mượt, hệ tiêu hoá khoẻ mạnh và tăng cường sức đề kháng cho cún cưng. Sản phẩm cam kết không chứa chất bảo quản nhân tạo, không hương liệu hoá học và 100% nguyên liệu tự nhiên chọn lọc từ nông trại organic.',
+      description:
+          'Thức ăn hạt hữu cơ dinh dưỡng chất lượng cao cung cấp đầy đủ dưỡng chất cần thiết cho sự phát triển toàn diện của thú cưng của bạn. Công thức đặc biệt được nghiên cứu bởi các chuyên gia thú y hàng đầu giúp lông bóng mượt, hệ tiêu hoá khoẻ mạnh và tăng cường sức đề kháng cho cún cưng. Sản phẩm cam kết không chứa chất bảo quản nhân tạo, không hương liệu hoá học và 100% nguyên liệu tự nhiên chọn lọc từ nông trại organic.',
       price: 29.99,
       stock: 15,
-      imageUrl: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&auto=format&fit=crop&q=60',
+      imageUrl:
+          'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&auto=format&fit=crop&q=60',
       createdAt: DateTime.now(),
     );
   }
@@ -82,11 +105,46 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _isFavorite ? 'Đã thêm vào danh sách yêu thích!' : 'Đã xoá khỏi danh sách yêu thích!',
+          _isFavorite
+              ? 'Đã thêm vào danh sách yêu thích!'
+              : 'Đã xoá khỏi danh sách yêu thích!',
         ),
         duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  Future<void> _addToCart(Product product) async {
+    if (_isAddingToCart) return;
+
+    setState(() => _isAddingToCart = true);
+
+    final success = await _cartProvider.addToCart(product.productId, _quantity);
+
+    if (!mounted) return;
+
+    setState(() => _isAddingToCart = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã thêm $_quantity sản phẩm vào giỏ hàng!'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _cartProvider.errorMessage ??
+                'Không thể thêm sản phẩm vào giỏ hàng',
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -94,22 +152,26 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final productAsync = ref.watch(productDetailProvider(widget.productId));
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
-      body: productAsync.when(
-        data: (product) => _buildDetailContent(product, isDark),
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+    return provider.ChangeNotifierProvider.value(
+      value: _cartProvider,
+      child: Scaffold(
+        backgroundColor: isDark
+            ? AppColors.backgroundDark
+            : AppColors.background,
+        body: productAsync.when(
+          data: (product) => _buildDetailContent(product, isDark),
+          loading: () => const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
           ),
+          error: (err, stack) {
+            final fallbackProduct = _getFallbackProduct();
+            return _buildDetailContent(fallbackProduct, isDark);
+          },
         ),
-        error: (err, stack) {
-          // Robust static fallback so that user always sees a beautiful product details page
-          final fallbackProduct = _getFallbackProduct();
-          return _buildDetailContent(fallbackProduct, isDark);
-        },
+        bottomNavigationBar: _buildBottomCartBar(isDark),
       ),
-      bottomNavigationBar: _buildBottomCartBar(isDark),
     );
   }
 
@@ -161,7 +223,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         child: CircleAvatar(
           backgroundColor: Colors.white.withValues(alpha: 0.85),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 18),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87,
+              size: 18,
+            ),
             onPressed: () => context.pop(),
           ),
         ),
@@ -173,7 +239,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             backgroundColor: Colors.white.withValues(alpha: 0.85),
             child: IconButton(
               icon: Icon(
-                _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                _isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
                 color: _isFavorite ? Colors.redAccent : Colors.black87,
                 size: 22,
               ),
@@ -191,12 +259,20 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   fit: BoxFit.cover,
                   errorWidget: (context, url, err) => Container(
                     color: Colors.grey[200],
-                    child: const Icon(Icons.pets_rounded, size: 72, color: AppColors.primary),
+                    child: const Icon(
+                      Icons.pets_rounded,
+                      size: 72,
+                      color: AppColors.primary,
+                    ),
                   ),
                 )
               : Container(
                   color: Colors.grey[200],
-                  child: const Icon(Icons.pets_rounded, size: 72, color: AppColors.primary),
+                  child: const Icon(
+                    Icons.pets_rounded,
+                    size: 72,
+                    color: AppColors.primary,
+                  ),
                 ),
         ),
       ),
@@ -241,7 +317,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               const SizedBox(width: 8),
               if (product.stock <= 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -267,21 +346,29 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               const SizedBox(width: 4),
               Text(
                 '4.8',
-                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(width: 6),
               Text(
                 '(142 đánh giá)',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondary,
                 ),
               ),
               const Spacer(),
               Text(
-                'Đã bán 1.2k',
+                product.stock > 0
+                    ? 'Còn ${product.stock} sản phẩm'
+                    : 'Hết hàng',
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -293,7 +380,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$${product.price.toStringAsFixed(2)}',
+                _formatCurrency(product.price),
                 style: AppTextStyles.h1.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -304,7 +391,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               Text(
                 '/ sản phẩm',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -356,14 +445,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     children: [
                       Text(
                         highlight['label'] as String,
-                        style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         highlight['desc'] as String,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondary,
                           fontSize: 9,
                         ),
                         maxLines: 1,
@@ -403,7 +496,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary
@@ -421,7 +517,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Colors.white
-                          : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
+                          : (isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimary),
                     ),
                   ),
                 ),
@@ -450,7 +548,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ? '${desc.substring(0, 150)}...'
               : desc,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondary,
             height: 1.5,
           ),
         ),
@@ -468,7 +568,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             ),
             child: Text(
               _isDescriptionExpanded ? 'Thu gọn' : 'Xem thêm',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
       ],
@@ -477,7 +580,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   Widget _buildBottomCartBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l, vertical: AppSpacing.m),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.l,
+        vertical: AppSpacing.m,
+      ),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         border: Border(
@@ -509,7 +615,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ),
                   Text(
                     '$_quantity',
-                    style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.add_rounded, size: 20),
@@ -529,10 +637,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF9E66),
-                      Color(0xFFFF8C42),
-                    ],
+                    colors: [Color(0xFFFF9E66), Color(0xFFFF8C42)],
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
@@ -544,15 +649,15 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Đã thêm $_quantity sản phẩm vào giỏ hàng!'),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onPressed: _isAddingToCart
+                      ? null
+                      : () async {
+                          final product = await ref.read(
+                            productDetailProvider(widget.productId).future,
+                          );
+                          if (!mounted) return;
+                          await _addToCart(product);
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,

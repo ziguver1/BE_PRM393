@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../presentation/auth/providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../data/models/cart_model.dart';
 
@@ -48,6 +51,20 @@ class _CartScreenState extends State<CartScreen> {
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Tải lại',
           ),
+          IconButton(
+            onPressed: () async {
+              final container = ProviderScope.containerOf(context);
+              final authNotifier = container.read(
+                authNotifierProvider.notifier,
+              );
+              await authNotifier.logout();
+              if (mounted) {
+                context.go('/login');
+              }
+            },
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Đăng xuất (test)',
+          ),
         ],
       ),
       body: Column(
@@ -69,11 +86,19 @@ class _CartScreenState extends State<CartScreen> {
                   Expanded(
                     child: Text(
                       cartProvider.errorMessage!,
-                      style: TextStyle(color: Colors.red.shade800, fontSize: 13, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: Colors.red.shade800,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close_rounded, color: Colors.red.shade700, size: 18),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: Colors.red.shade700,
+                      size: 18,
+                    ),
                     onPressed: cartProvider.clearError,
                   ),
                 ],
@@ -81,13 +106,11 @@ class _CartScreenState extends State<CartScreen> {
             ),
 
           // Main Content
-          Expanded(
-            child: _buildMainContent(context, cartProvider),
-          ),
+          Expanded(child: _buildMainContent(context, cartProvider)),
 
           // Bottom Checkout Summary
           if (cartProvider.cart != null && cartProvider.cart!.items.isNotEmpty)
-            _buildCheckoutSummary(context, cartProvider.cart!),
+            _buildCheckoutSummary(context, cartProvider),
         ],
       ),
     );
@@ -101,7 +124,10 @@ class _CartScreenState extends State<CartScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Đang tải giỏ hàng của bạn...', style: TextStyle(color: Colors.grey)),
+            Text(
+              'Đang tải giỏ hàng của bạn...',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
@@ -131,13 +157,21 @@ class _CartScreenState extends State<CartScreen> {
               const SizedBox(height: 24),
               const Text(
                 'Giỏ hàng đang trống!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Hãy ghé thăm cửa hàng và chọn các loại hạt, pate ngon nhất cho thú cưng của bạn nhé.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.4),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
@@ -147,8 +181,13 @@ class _CartScreenState extends State<CartScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade700,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
               ),
             ],
@@ -157,20 +196,58 @@ class _CartScreenState extends State<CartScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: cart.items.length,
-      itemBuilder: (context, index) {
-        final item = cart.items[index];
-        return _buildCartItemCard(context, item, cartProvider);
-      },
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Row(
+            children: [
+              Checkbox(
+                value: cartProvider.allSelected,
+                activeColor: Colors.orange.shade700,
+                onChanged: (_) => cartProvider.toggleSelectAll(),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'Chọn tất cả',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            itemCount: cart.items.length,
+            itemBuilder: (context, index) {
+              final item = cart.items[index];
+              return _buildCartItemCard(context, item, cartProvider);
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildCartItemCard(BuildContext context, CartItem item, CartProvider cartProvider) {
-    final isCat = item.product.name.toLowerCase().contains('cat') || 
-                  item.product.name.toLowerCase().contains('kitten') || 
-                  item.product.name.toLowerCase().contains('mèo');
+  Widget _buildCartItemCard(
+    BuildContext context,
+    CartItem item,
+    CartProvider cartProvider,
+  ) {
+    final isCat =
+        item.product.name.toLowerCase().contains('cat') ||
+        item.product.name.toLowerCase().contains('kitten') ||
+        item.product.name.toLowerCase().contains('mèo');
 
     return Dismissible(
       key: Key('cart_item_${item.cartItemId}'),
@@ -183,14 +260,20 @@ class _CartScreenState extends State<CartScreen> {
           color: Colors.red.shade700,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 28),
+        child: const Icon(
+          Icons.delete_sweep_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Xác nhận xóa?'),
-            content: Text('Bạn có chắc chắn muốn xóa "${item.product.name}" khỏi giỏ hàng?'),
+            content: Text(
+              'Bạn có chắc chắn muốn xóa "${item.product.name}" khỏi giỏ hàng?',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -228,6 +311,14 @@ class _CartScreenState extends State<CartScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Checkbox(
+                value: cartProvider.isSelected(item.cartItemId),
+                activeColor: Colors.orange.shade700,
+                onChanged: (_) =>
+                    cartProvider.toggleSelectItem(item.cartItemId),
+              ),
+              const SizedBox(width: 4),
+
               // Product Image / Placeholder Icon
               Container(
                 width: 80,
@@ -239,7 +330,9 @@ class _CartScreenState extends State<CartScreen> {
                 child: Center(
                   child: Icon(
                     isCat ? Icons.pets : Icons.pets_rounded,
-                    color: isCat ? Colors.orange.shade300 : Colors.blue.shade300,
+                    color: isCat
+                        ? Colors.orange.shade300
+                        : Colors.blue.shade300,
                     size: 36,
                   ),
                 ),
@@ -255,7 +348,11 @@ class _CartScreenState extends State<CartScreen> {
                       item.product.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -283,14 +380,22 @@ class _CartScreenState extends State<CartScreen> {
                               _buildQuantityButton(
                                 icon: Icons.remove,
                                 onPressed: () {
-                                  cartProvider.updateQuantity(item.cartItemId, item.quantity - 1);
+                                  cartProvider.updateQuantity(
+                                    item.cartItemId,
+                                    item.quantity - 1,
+                                  );
                                 },
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 child: Text(
                                   item.quantity.toString(),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                               _buildQuantityButton(
@@ -299,13 +404,18 @@ class _CartScreenState extends State<CartScreen> {
                                   if (item.quantity >= item.product.stock) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Số lượng vượt quá hàng có sẵn trong kho (${item.product.stock})'),
+                                        content: Text(
+                                          'Số lượng vượt quá hàng có sẵn trong kho (${item.product.stock})',
+                                        ),
                                         backgroundColor: Colors.red.shade700,
                                         behavior: SnackBarBehavior.floating,
                                       ),
                                     );
                                   } else {
-                                    cartProvider.updateQuantity(item.cartItemId, item.quantity + 1);
+                                    cartProvider.updateQuantity(
+                                      item.cartItemId,
+                                      item.quantity + 1,
+                                    );
                                   }
                                 },
                               ),
@@ -319,15 +429,21 @@ class _CartScreenState extends State<CartScreen> {
                               context: context,
                               builder: (context) => AlertDialog(
                                 title: const Text('Xác nhận xóa?'),
-                                content: Text('Bạn có chắc chắn muốn xóa "${item.product.name}"?'),
+                                content: Text(
+                                  'Bạn có chắc chắn muốn xóa "${item.product.name}"?',
+                                ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
                                     child: const Text('Hủy'),
                                   ),
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
-                                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
                                     child: const Text('Xóa'),
                                   ),
                                 ],
@@ -337,7 +453,11 @@ class _CartScreenState extends State<CartScreen> {
                               cartProvider.removeFromCart(item.cartItemId);
                             }
                           },
-                          icon: Icon(Icons.delete_outline_rounded, color: Colors.grey.shade400, size: 20),
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.grey.shade400,
+                            size: 20,
+                          ),
                         ),
                       ],
                     ),
@@ -351,7 +471,10 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildQuantityButton({required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildQuantityButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(100),
@@ -362,7 +485,13 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildCheckoutSummary(BuildContext context, CartResponse cart) {
+  Widget _buildCheckoutSummary(
+    BuildContext context,
+    CartProvider cartProvider,
+  ) {
+    final selectedTotal = cartProvider.selectedTotal;
+    final selectedCount = cartProvider.selectedItemCount;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
@@ -385,14 +514,21 @@ class _CartScreenState extends State<CartScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Tổng số tiền:',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.grey),
+                Expanded(
+                  child: Text(
+                    selectedCount > 0
+                        ? 'Đã chọn $selectedCount sản phẩm'
+                        : 'Chưa chọn sản phẩm nào',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
                 ),
                 Text(
-                  _formatCurrency(cart.total),
+                  _formatCurrency(selectedTotal),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -422,29 +558,33 @@ class _CartScreenState extends State<CartScreen> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Placeholder for future checkout screen implementation
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Thanh toán thành công 🎉'),
-                        content: const Text(
-                          'Cảm ơn bạn đã lựa chọn PawMart! Đây là bản demo tính năng Giỏ hàng. Tính năng thanh toán chi tiết sẽ được xây dựng sau.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Đóng'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  onPressed: selectedCount == 0
+                      ? null
+                      : () {
+                          // Placeholder for future checkout screen implementation
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Thanh toán thành công 🎉'),
+                              content: const Text(
+                                'Cảm ơn bạn đã lựa chọn PawMart! Đây là bản demo tính năng Giỏ hàng. Tính năng thanh toán chi tiết sẽ được xây dựng sau.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Đóng'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     foregroundColor: Colors.white,
                     shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
                   ),
                   child: const Text(
                     'Tiến hành thanh toán',
