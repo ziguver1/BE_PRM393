@@ -76,6 +76,11 @@ export class OrderRepository {
             Email: true,
           },
         },
+        OrderDetails: {
+          include: {
+            Product: true,
+          },
+        },
       },
     });
   }

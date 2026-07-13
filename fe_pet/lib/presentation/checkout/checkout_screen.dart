@@ -338,7 +338,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: selectedItems.isEmpty
+                          onPressed: (_isSubmitting || selectedItems.isEmpty)
                               ? null
                               : () => _processCheckout(context, cartProvider),
                           style: ElevatedButton.styleFrom(
