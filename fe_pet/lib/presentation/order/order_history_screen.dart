@@ -324,7 +324,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
           children: [
             // Order ID & Status Header
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +375,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
@@ -386,7 +386,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
                         ),
                       ),
                       Text(
-                        _formatCurrency(unitPrice * quantity),
+                        _formatCurrency((unitPrice * quantity).toDouble()),
                         style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                       ),
                     ],
@@ -397,7 +397,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
 
             // Time & Total Price & Pay Action
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

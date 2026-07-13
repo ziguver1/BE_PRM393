@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma';
 import { AppError } from '../middleware/error.middleware';
 import { OrderStatus } from '../validators/order.validator';
+import { PayOS } from '@payos/node';
 
 export class OrderRepository {
   async createOrder(userId: number, shippingAddress: string): Promise<any> {
@@ -65,7 +66,7 @@ export class OrderRepository {
   }
 
   async findAll(userId?: number) {
-    return prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where: userId ? { UserId: userId } : {},
       orderBy: { CreatedAt: 'desc' },
       include: {
@@ -83,6 +84,35 @@ export class OrderRepository {
         },
       },
     });
+
+    // Tự động kiểm tra và đồng bộ trạng thái PENDING với PayOS (Self-healing fallback)
+    const pendingOrders = orders.filter(o => o.Status === 'PENDING' && o.OrderCode);
+    if (pendingOrders.length > 0 && process.env.PAYOS_CLIENT_ID) {
+      const payos = new PayOS({
+        clientId: process.env.PAYOS_CLIENT_ID,
+        apiKey: process.env.PAYOS_API_KEY || '',
+        checksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
+      });
+
+      await Promise.all(
+        pendingOrders.map(async (order) => {
+          try {
+            const payosOrder = await payos.paymentRequests.get(order.OrderCode!);
+            if (payosOrder && payosOrder.status === 'PAID') {
+              await prisma.order.update({
+                where: { OrderId: order.OrderId },
+                data: { Status: 'PAID' },
+              });
+              order.Status = 'PAID'; // Cập nhật trực tiếp vào đối tượng để phản hồi ngay lập tức
+            }
+          } catch (err) {
+            // Im lặng nếu lỗi (link chưa được thanh toán hoặc hết hạn trên PayOS)
+          }
+        })
+      );
+    }
+
+    return orders;
   }
 
   async findById(orderId: number) {
