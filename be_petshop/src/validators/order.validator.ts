@@ -4,6 +4,7 @@ export type OrderStatus = 'PENDING' | 'PAID' | 'PROCESSING' | 'SHIPPING' | 'DELI
 
 export const createOrderSchema = z.object({
   ShippingAddress: z.string().min(5, 'Shipping address must be at least 5 characters'),
+  selectedCartItemIds: z.array(z.number()).optional(),
 });
 
 export const updateOrderStatusSchema = z.object({

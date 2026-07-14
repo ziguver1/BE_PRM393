@@ -22,7 +22,7 @@ function getVariantDetails(product: any, selectedVariant?: string) {
 }
 
 export class OrderRepository {
-  async createOrder(userId: number, shippingAddress: string): Promise<any> {
+  async createOrder(userId: number, shippingAddress: string, selectedCartItemIds?: number[]): Promise<any> {
     return prisma.$transaction(async (tx: any) => {
       // 0. Tối ưu phần hủy đơn cũ: Gom logic cập nhật kho
       const oldPendingOrders = await tx.order.findMany({
@@ -43,8 +43,12 @@ export class OrderRepository {
       }
 
       // 1. Lấy user cart items (Đã include sẵn Product)
+      // Filter by selectedCartItemIds if provided, otherwise get all
       const cartItems = await tx.cartItem.findMany({
-        where: { UserId: userId },
+        where: {
+          UserId: userId,
+          ...(selectedCartItemIds && selectedCartItemIds.length > 0 ? { CartItemId: { in: selectedCartItemIds } } : {}),
+        },
         include: { Product: true },
       });
 
@@ -114,6 +118,13 @@ export class OrderRepository {
           },
         });
       }
+
+      // 5. Xóa các cart items đã được chọn khỏi giỏ hàng
+      await tx.cartItem.deleteMany({
+        where: {
+          CartItemId: { in: cartItems.map((item: any) => item.CartItemId) },
+        },
+      });
 
       return order;
     }, {

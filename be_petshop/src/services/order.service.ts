@@ -6,7 +6,7 @@ const orderRepository = new OrderRepository();
 
 export class OrderService {
   async create(userId: number, input: CreateOrderInput) {
-    return orderRepository.createOrder(userId, input.ShippingAddress);
+    return orderRepository.createOrder(userId, input.ShippingAddress, input.selectedCartItemIds);
   }
 
   async getAll(userId: number, role: string) {
