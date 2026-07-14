@@ -7,14 +7,15 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/product_card.dart';
-import '../../domain/entities/product.dart';
+import '../../data/models/product_model.dart';
 import '../../core/configs/providers.dart';
 
 // Family provider to load category products
-final categoryProductsProvider = FutureProvider.family<List<Product>, int>((ref, catId) async {
-  final repository = ref.watch(productRepositoryProvider);
-  final paginated = await repository.getProducts(page: 1, limit: 50, categoryId: catId);
-  return paginated.items;
+// Use datasource directly to get ProductModel with full relations (images, variants, filters)
+final categoryProductsProvider = FutureProvider.family<List<ProductModel>, int>((ref, catId) async {
+  final dataSource = ref.watch(productRemoteDataSourceProvider);
+  final result = await dataSource.getProducts(page: 1, limit: 50, categoryId: catId);
+  return result.data;
 });
 
 class CategoryDetailScreen extends ConsumerStatefulWidget {
@@ -39,8 +40,8 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
     ref.invalidate(categoryProductsProvider(widget.categoryId));
   }
 
-  List<Product> _sortProducts(List<Product> products) {
-    final sorted = List<Product>.from(products);
+  List<ProductModel> _sortProducts(List<ProductModel> products) {
+    final sorted = List<ProductModel>.from(products);
     if (_sortBy == 'price') {
       if (_sortOrder == 'asc') {
         sorted.sort((a, b) => a.price.compareTo(b.price));
@@ -118,7 +119,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
               padding: const EdgeInsets.all(AppSpacing.m),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.54,
+                childAspectRatio: 0.62,
                 crossAxisSpacing: AppSpacing.m,
                 mainAxisSpacing: AppSpacing.m,
               ),
@@ -127,7 +128,10 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                 final product = sortedProducts[index];
                 return ProductCard(
                   product: product,
-                  onTap: () => context.push('/product/${product.productId}'),
+                  onTap: () => context.push(
+                    '/product/${product.productId}',
+                    extra: product,
+                  ),
                 );
               },
             );
@@ -136,7 +140,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
             padding: const EdgeInsets.all(AppSpacing.m),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.54,
+              childAspectRatio: 0.62,
               crossAxisSpacing: AppSpacing.m,
               mainAxisSpacing: AppSpacing.m,
             ),

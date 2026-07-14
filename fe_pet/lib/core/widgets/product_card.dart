@@ -207,11 +207,15 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          'Đã bán ${(widget.product.productId * 19) % 150 + 12}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 10,
+                        Flexible(
+                          child: Text(
+                            'Đã bán ${(widget.product.productId * 19) % 150 + 12}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 10,
+                            ),
                           ),
                         ),
                       ],

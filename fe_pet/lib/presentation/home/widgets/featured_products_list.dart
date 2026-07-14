@@ -53,7 +53,10 @@ class FeaturedProductsList extends ConsumerWidget {
                     margin: const EdgeInsets.only(right: 14),
                     child: ProductCard(
                       product: product,
-                      onTap: () => context.push('/product/${product.productId}'),
+                      onTap: () => context.push(
+                        '/product/${product.productId}',
+                        extra: product,
+                      ),
                     ),
                   );
                 },

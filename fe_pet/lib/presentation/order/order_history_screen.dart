@@ -211,6 +211,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
           indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
           unselectedLabelColor: Colors.grey,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
             Tab(text: 'Tất cả'),
@@ -339,21 +341,29 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
             // Order ID & Status Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Đơn hàng #${order['OrderId']}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    if (orderCode != null)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Mã PayOS: $orderCode',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        'Đơn hàng #${order['OrderId']}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                  ],
+                      if (orderCode != null)
+                        Text(
+                          'Mã PayOS: $orderCode',
+                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
@@ -412,20 +422,26 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> with SingleTick
             // Time & Total Price & Pay Action
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Thời gian đặt:',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                    Text(
-                      _formatDate(order['CreatedAt'] as String),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Thời gian đặt:',
+                        style: TextStyle(color: Colors.grey, fontSize: 11),
+                      ),
+                      Text(
+                        _formatDate(order['CreatedAt'] as String),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [

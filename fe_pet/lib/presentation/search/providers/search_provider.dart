@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../domain/entities/product.dart';
+import '../../../data/models/product_model.dart';
 import '../../../core/configs/providers.dart';
 
 class SearchState {
@@ -9,7 +9,7 @@ class SearchState {
   final double? maxPrice;
   final String sortBy;
   final String sortOrder;
-  final List<Product> products;
+  final List<ProductModel> products;
   final int page;
   final int totalPages;
   final bool isLoading;
@@ -38,7 +38,7 @@ class SearchState {
     double? Function()? maxPrice,
     String? sortBy,
     String? sortOrder,
-    List<Product>? products,
+    List<ProductModel>? products,
     int? page,
     int? totalPages,
     bool? isLoading,
@@ -77,10 +77,11 @@ class SearchNotifier extends Notifier<SearchState> {
     }
 
     try {
-      final repository = ref.read(productRepositoryProvider);
+      // Use datasource directly to get ProductModel with full relations (images, variants, filters)
+      final dataSource = ref.read(productRemoteDataSourceProvider);
       final currentPage = loadMore ? state.page + 1 : 1;
       
-      final result = await repository.searchProducts(
+      final result = await dataSource.searchProducts(
         page: currentPage,
         limit: 10,
         search: state.query.isNotEmpty ? state.query : null,
@@ -92,8 +93,8 @@ class SearchNotifier extends Notifier<SearchState> {
       );
 
       final updatedProducts = loadMore
-          ? [...state.products, ...result.items]
-          : result.items;
+          ? [...state.products, ...result.data]
+          : result.data;
 
       state = state.copyWith(
         products: updatedProducts,

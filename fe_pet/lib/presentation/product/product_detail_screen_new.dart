@@ -614,58 +614,41 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
       ),
       child: SafeArea(
-        top: false,
         child: Row(
           children: [
-            // Quantity Picker — compact
+            // Quantity Picker
             Container(
               decoration: BoxDecoration(
                 color: isDark ? AppColors.backgroundDark : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  InkWell(
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                    onTap: _quantity > 1
+                  IconButton(
+                    icon: const Icon(Icons.remove_rounded, size: 20),
+                    onPressed: _quantity > 1
                         ? () => setState(() => _quantity--)
                         : null,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                      child: Icon(
-                        Icons.remove_rounded,
-                        size: 18,
-                        color: _quantity > 1
-                            ? (isDark ? Colors.white : Colors.black87)
-                            : Colors.grey,
-                      ),
-                    ),
                   ),
                   SizedBox(
-                    width: 28,
+                    width: 30,
                     child: Center(
                       child: Text(
                         '$_quantity',
                         style: AppTextStyles.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
                         ),
                       ),
                     ),
                   ),
-                  InkWell(
-                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-                    onTap: () => setState(() => _quantity++),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                      child: Icon(Icons.add_rounded, size: 18),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.add_rounded, size: 20),
+                    onPressed: () => setState(() => _quantity++),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.l),
 
             // Add to Cart Button
             Expanded(
@@ -674,7 +657,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ? null
                     : () => _addToCart(product),
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 50),
+                  minimumSize: const Size.fromHeight(50),
                   side: const BorderSide(color: AppColors.primary),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -685,14 +668,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.m),
 
             // Buy Now Button
             Expanded(
@@ -710,7 +690,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    minimumSize: const Size(0, 50),
+                    minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -720,10 +700,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),

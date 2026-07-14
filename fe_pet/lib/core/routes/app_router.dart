@@ -15,13 +15,15 @@ import '../../presentation/profile/profile_screen.dart';
 import '../../presentation/profile/address_book_screen.dart';
 import '../../presentation/profile/change_password_screen.dart';
 import '../../presentation/category/category_detail_screen.dart';
-import '../../presentation/product/product_detail_screen.dart';
+import '../../presentation/product/product_detail_loader.dart';
 import '../../presentation/checkout/checkout_screen.dart';
 import '../../presentation/checkout/payment_webview_screen.dart';
 import '../../presentation/order/order_history_screen.dart';
 import '../../presentation/notifications/notifications_screen.dart';
 import '../../presentation/chat/chat_screen.dart';
 import '../../presentation/auth/providers/auth_provider.dart';
+import '../../data/models/product_model.dart';
+
 
 class RouterTransitionNotifier extends ChangeNotifier {
   final Ref _ref;
@@ -133,8 +135,14 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/product/:id',
         builder: (context, state) {
-          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-          return ProductDetailScreen(productId: id);
+          final productId = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          // If a full ProductModel was passed via extra, use it directly (no extra fetch needed)
+          final extra = state.extra;
+          final initialProduct = extra is ProductModel ? extra : null;
+          return ProductDetailLoader(
+            productId: productId,
+            initialProduct: initialProduct,
+          );
         },
       ),
       GoRoute(

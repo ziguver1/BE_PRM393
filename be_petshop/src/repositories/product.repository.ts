@@ -152,6 +152,17 @@ export class ProductRepository {
       where: { ProductId: productId },
       include: {
         Category: true,
+        Images: true,
+        ProductVariants: true,
+        ProductFilters: {
+          include: {
+            FilterOption: {
+              include: {
+                Group: true,
+              },
+            },
+          },
+        },
       },
     });
   }

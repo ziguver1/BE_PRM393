@@ -29,7 +29,10 @@ class RecommendedGrid extends ConsumerWidget {
               final product = products[index];
               return ProductCard(
                 product: product,
-                onTap: () => context.push('/product/${product.productId}'),
+                onTap: () => context.push(
+                  '/product/${product.productId}',
+                  extra: product,
+                ),
               );
             },
             childCount: products.length,

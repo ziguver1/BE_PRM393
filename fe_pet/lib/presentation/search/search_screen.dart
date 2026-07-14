@@ -413,7 +413,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               padding: const EdgeInsets.all(AppSpacing.m),
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                childAspectRatio: 0.54,
+                                childAspectRatio: 0.62,
                                 crossAxisSpacing: AppSpacing.m,
                                 mainAxisSpacing: AppSpacing.m,
                               ),
@@ -422,7 +422,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 final product = searchState.products[index];
                                 return ProductCard(
                                   product: product,
-                                  onTap: () => context.push('/product/${product.productId}'),
+                                  onTap: () => context.push(
+                                    '/product/${product.productId}',
+                                    extra: product,
+                                  ),
                                 );
                               },
                             ),
