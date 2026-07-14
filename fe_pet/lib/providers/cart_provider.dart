@@ -31,6 +31,7 @@ class CartProvider extends ChangeNotifier {
 
   double get selectedTotal {
     if (_cart == null) return 0;
+    debugPrint("Đang tính tổng cho các ID: $_selectedCartItemIds");
     return _cart!.items
         .where((item) => _selectedCartItemIds.contains(item.cartItemId))
         .fold(0.0, (sum, item) {
@@ -43,8 +44,10 @@ class CartProvider extends ChangeNotifier {
   void toggleSelectItem(int cartItemId) {
     if (_selectedCartItemIds.contains(cartItemId)) {
       _selectedCartItemIds.remove(cartItemId);
+      debugPrint("Đã XÓA ID $cartItemId khỏi danh sách chọn. Danh sách hiện tại: $_selectedCartItemIds");
     } else {
       _selectedCartItemIds.add(cartItemId);
+      debugPrint("Đã THÊM ID $cartItemId vào danh sách chọn. Danh sách hiện tại: $_selectedCartItemIds");
     }
     notifyListeners();
   }

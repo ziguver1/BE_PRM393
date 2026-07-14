@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import 'providers/home_provider.dart';
 
@@ -46,9 +46,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               snap: false,
               elevation: 0,
               backgroundColor: isDark ? AppColors.surfaceDark : AppColors.primary,
-              expandedHeight: 110,
+              expandedHeight: 130, // Tăng lên 130 để hết lỗi overflow
               title: Container(
-                height: 40,
+                height: 50,
                 decoration: BoxDecoration(
                   color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -92,23 +92,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
+                      // Chuyển màu từ cam sữa nhạt sang cam đậm
                       colors: isDark
                           ? [AppColors.surfaceDark, AppColors.backgroundDark]
-                          : [AppColors.primary, AppColors.primary.withOpacity(0.85)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                          : [Colors.orange.shade50, AppColors.primary], 
+                      begin: Alignment.topLeft,     
+                      end: Alignment.bottomRight,
                     ),
                   ),
-                  padding: const EdgeInsets.only(left: 20, right: 20, top: 74),
-                  child: const Row(
+                  // Điều chỉnh padding để logo không bị che
+                  padding: const EdgeInsets.fromLTRB(20, 45, 20, 10), 
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Image.asset(
+                        'public/images/pets_logo.png',
+                        height: 40, 
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        'Chào mừng bạn đến với PawMart 👋',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
+                     'Chào mừng bạn đến với PawMart 👋',
+  style: GoogleFonts.quicksand( // Bạn có thể đổi sang .poppins() hoặc .nunito()
+    color: isDark ? Colors.white : Colors.black87,
+    fontWeight: FontWeight.bold,
+    fontSize: 14, // Tăng nhẹ size lên chút cho rõ nét
+                       ),
                       ),
                     ],
                   ),

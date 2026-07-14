@@ -117,7 +117,10 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
 
   @override
   Future<ProductModel> getProductById(int id) async {
+    print('ProductRemoteDataSource: Fetching product ID: $id');
     final response = await _apiClient.dio.get('${ApiConstants.products}/$id');
+    print('ProductRemoteDataSource: Response status: ${response.statusCode}');
+    print('ProductRemoteDataSource: Response data: ${response.data}');
     return ProductModel.fromJson(response.data as Map<String, dynamic>);
   }
 }

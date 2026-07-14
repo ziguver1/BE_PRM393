@@ -1,4 +1,5 @@
 import '../entities/product.dart';
+import '../../data/models/product_model.dart';
 import '../../data/models/paginated_products_model.dart';
 
 abstract class ProductRepository {
@@ -24,5 +25,5 @@ abstract class ProductRepository {
     String? sortOrder,
   });
 
-  Future<Product> getProductById(int id);
+  Future<ProductModel> getProductById(int id);
 }

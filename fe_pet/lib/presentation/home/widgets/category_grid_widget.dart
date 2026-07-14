@@ -8,7 +8,31 @@ import '../../../core/constants/app_colors.dart';
 
 class CategoryGridWidget extends ConsumerWidget {
   const CategoryGridWidget({super.key});
+  Widget _buildCategoryImage(String categoryName) {
+  // Ánh xạ tên danh mục với file ảnh cụ thể
+  // Đảm bảo các file này tồn tại trong public/images/
+  final String imageName = switch (categoryName.toLowerCase()) {
+    'thức ăn' => 'pets_icon.png',
+    'bánh thưởng' => 'pets_icon.png',
+    'phụ kiện' => 'pets_icon.png',
+    'chăm sóc' => 'pets_icon.png',
+    'vệ sinh' => 'pets_icon.png',
+    'đồ chơi' => 'pets_icon.png',
+    _ => 'pets_icon.png',
+  };
 
+  return Image.asset(
+    'public/images/$imageName',
+    width: 28,
+    height: 28,
+    fit: BoxFit.cover,
+    errorBuilder: (context, error, stackTrace) => const Icon(
+      Icons.pets_rounded,
+      color: AppColors.primary,
+      size: 20,
+    ),
+  );
+} 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(homeCategoriesProvider);
@@ -78,8 +102,8 @@ class CategoryGridWidget extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 52,
-                          height: 52,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             color: isDark 
                                 ? AppColors.primary.withOpacity(0.15) 
@@ -88,33 +112,17 @@ class CategoryGridWidget extends ConsumerWidget {
                           ),
                           child: Center(
                             child: ClipOval(
-                              child: category.imageUrl != null && category.imageUrl!.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: category.imageUrl!,
-                                      width: 28,
-                                      height: 28,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (context, url, err) => const Icon(
-                                        Icons.pets_rounded,
-                                        color: AppColors.primary,
-                                        size: 20,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.pets_rounded,
-                                      color: AppColors.primary,
-                                      size: 20,
-                                    ),
-                            ),
+  child: _buildCategoryImage(category.name),
+),
                           ),
                         ),
                         const SizedBox(height: 6),
                         SizedBox(
-                          width: 80,
+                          width: 220,
                           child: Text(
                             category.name,
                             textAlign: TextAlign.center,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,

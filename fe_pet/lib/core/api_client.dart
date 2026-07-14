@@ -87,10 +87,7 @@ class ApiClient {
   }
 
   static String getBaseUrl() {
-    final envUrl = dotenv.env['API_BASE_URL'];
-    if (envUrl != null && envUrl.isNotEmpty) {
-      return envUrl;
-    }
+    // Hardcode localhost:3000 for local backend
     if (kIsWeb) return 'http://localhost:3000/api';
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {

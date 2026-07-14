@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://be-prm393-1.onrender.com';
+  static const String baseUrl = 'http://localhost:3000';
   static const String apiBaseUrl = '$baseUrl/api';
 
   // Auth

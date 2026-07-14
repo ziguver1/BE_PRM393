@@ -61,8 +61,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Future<void> _addToCart(ProductModel product) async {
-    if (_isAddingToCart) return;
+Future<bool> _addToCart(ProductModel product) async {
+    if (_isAddingToCart) return false;
 
     setState(() => _isAddingToCart = true);
 
@@ -81,7 +81,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         selectedVariant: selectedVariant,
       );
 
-      if (!mounted) return;
+      // Phải kiểm tra mounted trước khi gọi setState hoặc context
+      if (!mounted) return false;
 
       setState(() => _isAddingToCart = false);
 
@@ -93,8 +94,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 1), // Rút ngắn thời gian hiện thông báo
           ),
         );
+        return true; // Trả về true báo hiệu đã thêm thành công
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -105,9 +108,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        return false;
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() => _isAddingToCart = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -116,16 +120,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return false;
     }
   }
 
-  void _buyNow(ProductModel product) {
-    _addToCart(product).then((_) {
-      // Navigate to cart screen
-      context.push('/cart');
-    });
+  Future<void> _buyNow(ProductModel product) async {
+    // 1. Đợi hàm _addToCart chạy xong và lấy kết quả thành công/thất bại
+    final success = await _addToCart(product);
+    
+    // 2. Chỉ chuyển hướng sang giỏ hàng nếu THÊM THÀNH CÔNG và màn hình vẫn đang hiển thị (mounted)
+    if (success && mounted) {
+      // SỬA push THÀNH go Ở ĐÂY 👇
+      context.go('/cart');
+    }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -599,138 +608,123 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildBottomCartBar(ProductModel product, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.l,
-        vertical: AppSpacing.m,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppColors.borderDark : Colors.grey[200]!,
+Widget _buildBottomCartBar(ProductModel product, bool isDark) {
+    // ĐÃ THÊM COLUMN Ở ĐÂY ĐỂ KHÓA CHIỀU CAO
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.l,
+            vertical: AppSpacing.m,
           ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            // Quantity Picker — compact
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.backgroundDark : Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AppColors.borderDark : Colors.grey[200]!,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                    onTap: _quantity > 1
-                        ? () => setState(() => _quantity--)
-                        : null,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                      child: Icon(
-                        Icons.remove_rounded,
-                        size: 18,
-                        color: _quantity > 1
-                            ? (isDark ? Colors.white : Colors.black87)
-                            : Colors.grey,
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                // Quantity Picker
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.backgroundDark : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove_rounded, size: 20),
+                        onPressed: _quantity > 1
+                            ? () => setState(() => _quantity--)
+                            : null,
+                      ),
+                      SizedBox(
+                        width: 30,
+                        // ĐÃ BỎ CENTER VÀ DÙNG TEXTALIGN Ở ĐÂY
+                        child: Text(
+                          '$_quantity',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_rounded, size: 20),
+                        onPressed: () => setState(() => _quantity++),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.l),
+
+                // Add to Cart Button
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isAddingToCart
+                        ? null
+                        : () => _addToCart(product),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 50),
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Thêm vào giỏ',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 28,
-                    child: Center(
+                ),
+                const SizedBox(width: AppSpacing.m),
+
+                // Buy Now Button
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF9E66), Color(0xFFFF8C42)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isAddingToCart
+                          ? null
+                          : () => _buyNow(product),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        minimumSize: const Size(0, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: Text(
-                        '$_quantity',
+                        'Mua ngay',
                         style: AppTextStyles.bodyLarge.copyWith(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
                         ),
                       ),
                     ),
                   ),
-                  InkWell(
-                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-                    onTap: () => setState(() => _quantity++),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                      child: Icon(Icons.add_rounded, size: 18),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-
-            // Add to Cart Button
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isAddingToCart
-                    ? null
-                    : () => _addToCart(product),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 50),
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Thêm vào giỏ',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            // Buy Now Button
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9E66), Color(0xFFFF8C42)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ElevatedButton(
-                  onPressed: _isAddingToCart
-                      ? null
-                      : () => _buyNow(product),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Mua ngay',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

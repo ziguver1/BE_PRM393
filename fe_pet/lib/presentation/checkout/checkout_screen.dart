@@ -51,11 +51,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      // 1. Tạo đơn hàng từ giỏ hàng
+      // 1. Tạo đơn hàng từ giỏ hàng với các sản phẩm được chọn
       final orderResponse = await ApiClient().dio.post(
         '/orders',
         data: {
           'ShippingAddress': _addressController.text.trim(),
+          'selectedCartItemIds': cartProvider.selectedCartItemIds.toList(),
         },
       );
 

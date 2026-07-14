@@ -22,11 +22,8 @@ class ProductDetailLoader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // If we already have a fully-loaded ProductModel (passed via extra), use it directly
-    if (initialProduct != null) {
-      return ProductDetailScreen(product: initialProduct!);
-    }
-
+    // Always fetch from API to ensure we have full relations (images, variants, filters)
+    // The list API may not include these relations, so we need to fetch the full product detail
     final productAsync = ref.watch(productDetailProvider(productId));
 
     return productAsync.when(

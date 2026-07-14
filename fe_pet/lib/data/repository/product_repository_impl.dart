@@ -2,6 +2,7 @@ import '../../domain/entities/product.dart';
 import '../../domain/repository/product_repository.dart';
 import '../datasource/product_remote_data_source.dart';
 import '../models/paginated_products_model.dart';
+import '../models/product_model.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
   final ProductRemoteDataSource _remoteDataSource;
@@ -55,7 +56,7 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
-  Future<Product> getProductById(int id) {
+  Future<ProductModel> getProductById(int id) {
     return _remoteDataSource.getProductById(id);
   }
 }
