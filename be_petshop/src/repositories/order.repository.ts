@@ -119,12 +119,9 @@ export class OrderRepository {
         });
       }
 
-      // 5. Xóa các cart items đã được chọn khỏi giỏ hàng
-      await tx.cartItem.deleteMany({
-        where: {
-          CartItemId: { in: cartItems.map((item: any) => item.CartItemId) },
-        },
-      });
+      // 5. KHÔNG xóa cart items ngay lập tức - sẽ xóa sau khi thanh toán thành công
+      // Điều này đảm bảo nếu thanh toán thất bại, user vẫn có thể thử lại
+      // Cart items sẽ được xóa trong payment webhook khi thanh toán thành công
 
       return order;
     }, {
