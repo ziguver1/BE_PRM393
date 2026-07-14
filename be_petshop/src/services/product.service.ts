@@ -31,13 +31,15 @@ export class ProductService {
       let filterOptionIds: number[] | undefined;
       if (query.filters) {
         try {
-          filterOptionIds = query.filters
+          const parsedIds = query.filters
             .split(',')
             .map((id: string) => parseInt(id.trim(), 10))
             .filter((id: number) => !isNaN(id));
 
-          if (filterOptionIds.length === 0) {
+          if (parsedIds.length === 0) {
             filterOptionIds = undefined;
+          } else {
+            filterOptionIds = parsedIds;
           }
         } catch (error) {
           throw new AppError('Invalid filters parameter format', 400);
