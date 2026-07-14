@@ -133,6 +133,17 @@ export class ProductRepository {
         take: limit,
         include: {
           Category: true,
+          Images: true,
+          ProductVariants: true,
+          ProductFilters: {
+            include: {
+              FilterOption: {
+                include: {
+                  Group: true,
+                },
+              },
+            },
+          },
         },
       }),
       prisma.product.count({ where }),
