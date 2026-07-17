@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart' as provider_pkg;
 import '../../core/constants/app_colors.dart';
+import '../../providers/notification_provider.dart';
 import 'providers/home_provider.dart';
 
 // Reusable custom widgets
@@ -39,60 +41,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // 1. Collapsible Premium Shopee-like SliverAppBar
             SliverAppBar(
               pinned: true,
-              floating: true,
-              snap: false,
+              floating: false,
               elevation: 0,
+              centerTitle: true,
+              toolbarHeight: 80, // Elevated toolbar height to let the logo breathe
               backgroundColor: isDark ? AppColors.surfaceDark : AppColors.primary,
-              expandedHeight: 130, // Tăng lên 130 để hết lỗi overflow
-              title: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[850] : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: InkWell(
-                  onTap: () => context.push('/search'),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 14),
-                      Icon(Icons.search_rounded, color: Colors.grey[400], size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Tìm hạt, cát, pate cho thú cưng...',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
+              title: Hero(
+                tag: 'pets-logo',
+                child: Image.asset(
+                  'public/images/pets_logo.png',
+                  height: 75, // Zoomed in to capture the primary space
+                  fit: BoxFit.contain,
                 ),
               ),
-              actions: [
-                IconButton(
-                  onPressed: () => context.push('/notifications'),
-                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-                  tooltip: 'Thông báo',
-                ),
-                const SizedBox(width: 8),
-              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      // Chuyển màu từ cam sữa nhạt sang cam đậm
                       colors: isDark
                           ? [AppColors.surfaceDark, AppColors.backgroundDark]
                           : [Colors.orange.shade50, AppColors.primary], 
@@ -100,30 +67,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  // Điều chỉnh padding để logo không bị che
-                  padding: const EdgeInsets.fromLTRB(20, 45, 20, 10), 
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'public/images/pets_logo.png',
-                        height: 40, 
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                     'Chào mừng bạn đến với PawMart 👋',
-  style: GoogleFonts.quicksand( // Bạn có thể đổi sang .poppins() hoặc .nunito()
-    color: isDark ? Colors.white : Colors.black87,
-    fontWeight: FontWeight.bold,
-    fontSize: 14, // Tăng nhẹ size lên chút cho rõ nét
-                       ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
+              actions: [
+                // Wishlist Button (Trái tim)
+                IconButton(
+                  onPressed: () => context.push('/wishlist'),
+                  icon: const Icon(Icons.favorite_border_rounded, color: Colors.white),
+                  tooltip: 'Yêu thích',
+                ),
+                // Notification Button (Chuông)
+                provider_pkg.Consumer<NotificationProvider>(
+                  builder: (context, provider, child) {
+                    final count = provider.unreadCount;
+                    return Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          onPressed: () => context.push('/notifications'),
+                          icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                          tooltip: 'Thông báo',
+                        ),
+                        if (count > 0)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),

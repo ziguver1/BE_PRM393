@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ProductService } from '../../services/product.service';
 import { createProductSchema, updateProductSchema, productQuerySchema } from '../../validators/product.validator';
 import { handleError, AppError } from '../../middleware/error.middleware';
+import { getOptionalUser } from '../../middleware/auth.middleware';
 
 const productService = new ProductService();
 
 export class ProductsController {
   async getAll(req: NextRequest) {
     try {
+      const user = getOptionalUser(req);
+      const userId = user?.userId;
+
       const searchParams = req.nextUrl.searchParams;
       const queryParams = {
         page: searchParams.get('page') || undefined,
@@ -24,10 +28,10 @@ export class ProductsController {
       const validated = productQuerySchema.parse(queryParams);
       // Use new getAllProducts method if filters are provided, otherwise use getAll
       if (validated.filters) {
-        const result = await productService.getAllProducts(queryParams);
+        const result = await productService.getAllProducts(queryParams, userId);
         return NextResponse.json(result, { status: 200 });
       } else {
-        const result = await productService.getAll(validated);
+        const result = await productService.getAll(validated, userId);
         return NextResponse.json(result, { status: 200 });
       }
     } catch (error) {
@@ -37,11 +41,14 @@ export class ProductsController {
 
   async getById(req: NextRequest, context: { params: { id: string } }) {
     try {
+      const user = getOptionalUser(req);
+      const userId = user?.userId;
+
       const id = Number(context.params.id);
       if (isNaN(id)) {
         throw new AppError('Invalid product ID format.', 400);
       }
-      const product = await productService.getById(id);
+      const product = await productService.getById(id, userId);
       return NextResponse.json(product, { status: 200 });
     } catch (error) {
       return handleError(error);

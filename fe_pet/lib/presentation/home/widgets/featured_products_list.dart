@@ -53,8 +53,9 @@ class FeaturedProductsList extends ConsumerWidget {
                     margin: const EdgeInsets.only(right: 14),
                     child: ProductCard(
                       product: product,
+                      heroTagSuffix: 'featured',
                       onTap: () => context.push(
-                        '/product/${product.productId}',
+                        '/product/${product.productId}?heroTag=product-img-${product.productId}featured',
                         extra: product,
                       ),
                     ),

@@ -19,11 +19,20 @@ const controller = new OrdersController();
  *           schema:
  *             type: object
  *             required:
- *               - ShippingAddress
+ *               - shippingLatitude
+ *               - shippingLongitude
  *             properties:
- *               ShippingAddress:
- *                 type: string
- *                 example: 123 Pet Paradise Way, Suite A
+ *               shippingLatitude:
+ *                 type: number
+ *                 example: 10.8660
+ *               shippingLongitude:
+ *                 type: number
+ *                 example: 106.7951
+ *               selectedCartItemIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 example: [1, 2]
  *     responses:
  *       201:
  *         description: Order created successfully, cart emptied, stock decreased.

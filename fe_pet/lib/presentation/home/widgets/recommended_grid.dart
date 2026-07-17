@@ -29,8 +29,9 @@ class RecommendedGrid extends ConsumerWidget {
               final product = products[index];
               return ProductCard(
                 product: product,
+                heroTagSuffix: 'recommended',
                 onTap: () => context.push(
-                  '/product/${product.productId}',
+                  '/product/${product.productId}?heroTag=product-img-${product.productId}recommended',
                   extra: product,
                 ),
               );

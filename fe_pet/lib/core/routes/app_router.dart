@@ -21,6 +21,7 @@ import '../../presentation/checkout/payment_webview_screen.dart';
 import '../../presentation/order/order_history_screen.dart';
 import '../../presentation/notifications/notifications_screen.dart';
 import '../../presentation/chat/chat_screen.dart';
+import '../../presentation/wishlist/wishlist_screen.dart';
 import '../../presentation/auth/providers/auth_provider.dart';
 import '../../data/models/product_model.dart';
 
@@ -136,12 +137,14 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         path: '/product/:id',
         builder: (context, state) {
           final productId = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          final heroTag = state.uri.queryParameters['heroTag'];
           // If a full ProductModel was passed via extra, use it directly (no extra fetch needed)
           final extra = state.extra;
           final initialProduct = extra is ProductModel ? extra : null;
           return ProductDetailLoader(
             productId: productId,
             initialProduct: initialProduct,
+            heroTag: heroTag,
           );
         },
       ),
@@ -163,7 +166,11 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/orders',
-        builder: (context, state) => const OrderHistoryScreen(),
+        builder: (context, state) {
+          final tabStr = state.uri.queryParameters['tab'];
+          final initialTab = tabStr != null ? int.tryParse(tabStr) ?? 0 : 0;
+          return OrderHistoryScreen(initialTab: initialTab);
+        },
       ),
       GoRoute(
         path: '/profile/addresses',
@@ -180,6 +187,10 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/chat',
         builder: (context, state) => const ChatScreen(),
+      ),
+      GoRoute(
+        path: '/wishlist',
+        builder: (context, state) => const WishlistScreen(),
       ),
     ],
   );

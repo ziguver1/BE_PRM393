@@ -61,6 +61,14 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         _buildDivider(isDark),
                         _buildMenuItem(
+                          icon: Icons.support_agent_rounded,
+                          title: 'Hỗ trợ khách hàng',
+                          subtitle: 'Trò chuyện hỗ trợ trực tuyến 24/7',
+                          onTap: () => context.push('/chat'),
+                          isDark: isDark,
+                        ),
+                        _buildDivider(isDark),
+                        _buildMenuItem(
                           icon: Icons.logout_rounded,
                           title: 'Đăng xuất',
                           subtitle: 'Thoát khỏi phiên làm việc hiện tại',
@@ -285,23 +293,27 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _buildOrderStatusItem(
                   context,
-                  icon: Icons.wallet_giftcard_rounded,
-                  label: 'Chờ xác nhận',
-                ),
-                _buildOrderStatusItem(
-                  context,
-                  icon: Icons.archive_outlined,
-                  label: 'Chờ lấy hàng',
+                  icon: Icons.payment_rounded,
+                  label: 'Chờ thanh toán',
+                  tabIndex: 1,
                 ),
                 _buildOrderStatusItem(
                   context,
                   icon: Icons.local_shipping_outlined,
                   label: 'Đang giao',
+                  tabIndex: 2,
                 ),
                 _buildOrderStatusItem(
                   context,
-                  icon: Icons.star_outline_rounded,
-                  label: 'Đánh giá',
+                  icon: Icons.done_all_rounded,
+                  label: 'Đã nhận',
+                  tabIndex: 3,
+                ),
+                _buildOrderStatusItem(
+                  context,
+                  icon: Icons.cancel_outlined,
+                  label: 'Đã hủy',
+                  tabIndex: 4,
                 ),
               ],
             ),
@@ -315,9 +327,10 @@ class ProfileScreen extends ConsumerWidget {
     BuildContext context, {
     required IconData icon,
     required String label,
+    required int tabIndex,
   }) {
     return InkWell(
-      onTap: () => context.push('/orders'),
+      onTap: () => context.push('/orders?tab=$tabIndex'),
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         width: 80,

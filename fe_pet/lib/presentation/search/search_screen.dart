@@ -420,13 +420,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               itemCount: searchState.products.length,
                               itemBuilder: (context, index) {
                                 final product = searchState.products[index];
-                                return ProductCard(
-                                  product: product,
-                                  onTap: () => context.push(
-                                    '/product/${product.productId}',
-                                    extra: product,
-                                  ),
-                                );
+                                  return ProductCard(
+                                    product: product,
+                                    heroTagSuffix: 'search',
+                                    onTap: () => context.push(
+                                      '/product/${product.productId}?heroTag=product-img-${product.productId}search',
+                                      extra: product,
+                                    ),
+                                  );
                               },
                             ),
                           ),

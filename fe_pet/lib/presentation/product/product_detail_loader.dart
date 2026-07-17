@@ -11,13 +11,14 @@ import 'product_detail_screen.dart';
 /// Used when navigating without passing [extra], e.g. from Home, Search, Category.
 class ProductDetailLoader extends ConsumerWidget {
   final int productId;
-  /// Optional pre-loaded product from list — used as initial value to avoid delay.
   final ProductModel? initialProduct;
+  final String? heroTag;
 
   const ProductDetailLoader({
     super.key,
     required this.productId,
     this.initialProduct,
+    this.heroTag,
   });
 
   @override
@@ -27,7 +28,7 @@ class ProductDetailLoader extends ConsumerWidget {
     final productAsync = ref.watch(productDetailProvider(productId));
 
     return productAsync.when(
-      data: (product) => ProductDetailScreen(product: product),
+      data: (product) => ProductDetailScreen(product: product, heroTag: heroTag),
       loading: () => Scaffold(
         appBar: AppBar(
           leading: IconButton(

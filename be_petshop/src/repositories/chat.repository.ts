@@ -1,10 +1,10 @@
 import prisma from '../lib/prisma';
 
 export class ChatRepository {
-  async findRoomsByUser(userId: number) {
-    return prisma.chatRoom.findMany({
-      where: { UserId: userId },
-      orderBy: { CreatedAt: 'desc' },
+  async findConversationsByUser(userId: number) {
+    return prisma.conversation.findMany({
+      where: { userId: userId },
+      orderBy: { updatedAt: 'desc' },
       include: {
         User: {
           select: {
@@ -15,15 +15,18 @@ export class ChatRepository {
         },
         Messages: {
           take: 1,
-          orderBy: { CreatedAt: 'desc' },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
   }
 
-  async findAllRooms() {
-    return prisma.chatRoom.findMany({
-      orderBy: { CreatedAt: 'desc' },
+  async findAllConversations() {
+    return prisma.conversation.findMany({
+      orderBy: [
+        { unreadAdmin: 'desc' },
+        { lastMessageAt: 'desc' },
+      ],
       include: {
         User: {
           select: {
@@ -34,70 +37,100 @@ export class ChatRepository {
         },
         Messages: {
           take: 1,
-          orderBy: { CreatedAt: 'desc' },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
   }
 
-  async findRoomById(chatRoomId: number) {
-    return prisma.chatRoom.findUnique({
-      where: { ChatRoomId: chatRoomId },
+  async findConversationById(id: number) {
+    return prisma.conversation.findUnique({
+      where: { id: id },
       include: {
         User: true,
       },
     });
   }
 
-  async findOrCreateRoom(userId: number) {
-    const existing = await prisma.chatRoom.findFirst({
-      where: { UserId: userId },
+  async findOrCreateConversation(userId: number) {
+    const existing = await prisma.conversation.findUnique({
+      where: { userId: userId },
     });
 
     if (existing) {
       return existing;
     }
 
-    return prisma.chatRoom.create({
+    return prisma.conversation.create({
       data: {
-        UserId: userId,
+        userId: userId,
+        lastMessage: 'Cuộc trò chuyện đã được tạo.',
+        lastMessageAt: new Date(),
       },
     });
   }
 
-  async createMessage(chatRoomId: number, senderId: number, content: string) {
-    return prisma.message.create({
+  async createMessage(conversationId: number, senderType: 'Customer' | 'Admin', senderId: number, message: string) {
+    // 1. Create message
+    const msg = await prisma.message.create({
       data: {
-        ChatRoomId: chatRoomId,
-        SenderId: senderId,
-        Content: content,
-      },
-      include: {
-        Sender: {
-          select: {
-            UserId: true,
-            FullName: true,
-            Avatar: true,
-            Role: true,
-          },
-        },
+        conversationId: conversationId,
+        senderType: senderType,
+        senderId: senderId,
+        message: message,
       },
     });
+
+    // 2. Update conversation last message & unread badge
+    const updateData: any = {
+      lastMessage: message,
+      lastMessageAt: new Date(),
+    };
+
+    if (senderType === 'Customer') {
+      updateData.unreadAdmin = { increment: 1 };
+    } else {
+      updateData.unreadCustomer = { increment: 1 };
+    }
+
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: updateData,
+    });
+
+    return msg;
   }
 
-  async findMessagesByRoom(chatRoomId: number) {
+  async findMessagesByConversation(conversationId: number) {
     return prisma.message.findMany({
-      where: { ChatRoomId: chatRoomId },
-      orderBy: { CreatedAt: 'asc' },
-      include: {
-        Sender: {
-          select: {
-            UserId: true,
-            FullName: true,
-            Avatar: true,
-            Role: true,
-          },
-        },
+      where: { conversationId: conversationId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async clearUnreadCount(conversationId: number, typeToClear: 'Customer' | 'Admin') {
+    const updateData: any = {};
+    if (typeToClear === 'Customer') {
+      updateData.unreadCustomer = 0;
+    } else {
+      updateData.unreadAdmin = 0;
+    }
+
+    return prisma.conversation.update({
+      where: { id: conversationId },
+      data: updateData,
+    });
+  }
+
+  async markMessagesAsRead(conversationId: number, senderTypeToMarkRead: 'Customer' | 'Admin') {
+    return prisma.message.updateMany({
+      where: {
+        conversationId: conversationId,
+        senderType: senderTypeToMarkRead === 'Customer' ? 'Admin' : 'Customer', // Mark the *other* party's messages as read
+        isRead: false,
+      },
+      data: {
+        isRead: true,
       },
     });
   }

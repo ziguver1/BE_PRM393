@@ -11,6 +11,8 @@ class ApiClient {
   String? Function()? _refreshTokenGetter;
   Future<bool> Function(String newAccessToken, String newRefreshToken)? _onTokenRefreshed;
   void Function()? _onLogoutRequired;
+
+  String? get token => _tokenGetter?.call();
   
   bool _isRefreshing = false;
   final List<void Function(String token)> _failedQueue = [];

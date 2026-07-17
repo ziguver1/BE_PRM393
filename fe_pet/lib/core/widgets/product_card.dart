@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../../domain/entities/product.dart';
+import '../../providers/wishlist_provider.dart';
+import 'wishlist_heart_button.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_spacing.dart';
 import '../constants/app_text_styles.dart';
@@ -8,15 +11,20 @@ import '../constants/app_text_styles.dart';
 class ProductCard extends StatefulWidget {
   final Product product;
   final VoidCallback? onTap;
+  final String? heroTagSuffix;
 
-  const ProductCard({super.key, required this.product, this.onTap});
+  const ProductCard({
+    super.key,
+    required this.product,
+    this.onTap,
+    this.heroTagSuffix,
+  });
 
   @override
   State<ProductCard> createState() => _ProductCardState();
 }
 
 class _ProductCardState extends State<ProductCard> {
-  bool _isFavorite = false;
 
   String _formatCurrency(double value) {
     final raw = value.toStringAsFixed(0);
@@ -64,42 +72,45 @@ class _ProductCardState extends State<ProductCard> {
                 aspectRatio: 1.0,
                 child: Stack(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.grey[900]
-                            : const Color(0xFFF6F6F6),
-                      ),
-                      child:
-                          widget.product.imageUrl != null &&
-                              widget.product.imageUrl!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: widget.product.imageUrl!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              placeholder: (c, u) => const Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primary,
+                    Hero(
+                      tag: 'product-img-${widget.product.productId}${widget.heroTagSuffix ?? ''}',
+                      child: Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.grey[900]
+                              : const Color(0xFFF6F6F6),
+                        ),
+                        child:
+                            widget.product.imageUrl != null &&
+                                widget.product.imageUrl!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: widget.product.imageUrl!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                placeholder: (c, u) => const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              errorWidget: (c, u, e) => const Icon(
-                                Icons.broken_image_rounded,
+                                errorWidget: (c, u, e) => const Icon(
+                                  Icons.broken_image_rounded,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.pets_rounded,
+                                size: 40,
                                 color: Colors.grey,
                               ),
-                            )
-                          : const Icon(
-                              Icons.pets_rounded,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
+                      ),
                     ),
 
                     // Discount Badge
@@ -131,25 +142,34 @@ class _ProductCardState extends State<ProductCard> {
                     Positioned(
                       top: 6,
                       right: 6,
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white.withOpacity(0.9),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isFavorite = !_isFavorite;
-                            });
-                          },
-                          child: Icon(
-                            _isFavorite
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            color: _isFavorite
-                                ? AppColors.error
-                                : AppColors.textPrimary,
-                            size: 16,
-                          ),
-                        ),
+                      child: Consumer<WishlistProvider>(
+                        builder: (context, wishlistProvider, child) {
+                          final isFav = wishlistProvider.isWishlisted(widget.product.productId);
+                          return CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.white.withOpacity(0.9),
+                            child: WishlistHeartButton(
+                              product: widget.product,
+                              isWishlisted: isFav,
+                              iconSize: 16,
+                              onTap: () async {
+                                try {
+                                  await wishlistProvider.toggle(widget.product);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Không thể cập nhật danh sách yêu thích.'),
+                                        backgroundColor: Colors.red,
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],

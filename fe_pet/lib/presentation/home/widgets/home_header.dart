@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../providers/notification_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -177,7 +179,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> with SingleTickerProvid
                         tag: 'pets-logo',
                         child: Image.asset(
                           'public/images/pets_logo.png',
-                          height: 58,
+                          height: 80,
                           fit: BoxFit.contain,
                           alignment: Alignment.center,
                         ),
@@ -238,49 +240,98 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> with SingleTickerProvid
                       ),
                     ),
 
-                    // Top Right Floating Notification
+                    // Top Right Floating Action Buttons (Wishlist & Notification)
                     Align(
                       alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => context.push('/notifications'),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: headerTheme.floatingButtonBg,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Wishlist Button
+                          GestureDetector(
+                            onTap: () => context.push('/wishlist'), // Links to wishlist screen
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: headerTheme.floatingButtonBg,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                Icons.notifications_none_rounded,
+                              child: Icon(
+                                Icons.favorite_border_rounded,
                                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
                                 size: 22,
                               ),
-                              // Badge (Orange)
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          // Notification Button
+                          GestureDetector(
+                            onTap: () => context.push('/notifications'),
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: headerTheme.floatingButtonBg,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.notifications_none_rounded,
+                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                                    size: 22,
+                                  ),
+                                  // Badge (Orange)
+                                  provider_pkg.Consumer<NotificationProvider>(
+                                    builder: (context, provider, child) {
+                                      final count = provider.unreadCount;
+                                      if (count == 0) return const SizedBox.shrink();
+                                      return Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 14,
+                                            minHeight: 14,
+                                          ),
+                                          child: Text(
+                                            '$count',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -320,67 +371,6 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> with SingleTickerProvid
                         ),
                       ),
                     ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Search Bar with Fade animation
-                AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) => Opacity(
-                    opacity: _searchOpacity.value,
-                    child: child,
-                  ),
-                  child: GestureDetector(
-                    onTap: () => context.push('/search'),
-                    child: Container(
-                      height: 54,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: headerTheme.searchBarBg,
-                        borderRadius: BorderRadius.circular(headerTheme.searchBarRadius),
-                        border: Border.all(
-                          color: isDark ? AppColors.borderDark : AppColors.border,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search_rounded,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: AppSpacing.s),
-                          Expanded(
-                            child: Text(
-                              'Search food, toys, accessories...',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.tune_rounded,
-                              color: AppColors.primary,
-                              size: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ],

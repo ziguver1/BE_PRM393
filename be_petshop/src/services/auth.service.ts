@@ -107,5 +107,9 @@ export class AuthService {
       refreshToken: newRefreshToken,
     };
   }
+
+  async updateFcmToken(userId: number, fcmToken: string) {
+    return userRepository.update(userId, { fcmToken });
+  }
 }
 export default AuthService;

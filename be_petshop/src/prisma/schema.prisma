@@ -16,13 +16,14 @@ model User {
   Phone        String?
   Avatar       String?
   Role         String         @default("CUSTOMER") // CUSTOMER, ADMIN
+  fcmToken     String?        // Token để gửi thông báo qua Firebase Cloud Messaging
   CreatedAt    DateTime       @default(now())
   UpdatedAt    DateTime       @updatedAt
   CartItems    CartItem[]
   Orders       Order[]
   Notifications Notification[]
-  ChatRooms    ChatRoom[]
-  Messages     Message[]
+  Conversation  Conversation?
+  Wishlists    Wishlist[]
 }
 
 model Category {
@@ -53,6 +54,7 @@ model Product {
   Images       ProductImage[]
   Attributes   ProductAttribute[]
   ProductFilters ProductFilter[]
+  Wishlists    Wishlist[]
 }
 
 model CartItem {
@@ -76,7 +78,11 @@ model Order {
   UserId          Int
   TotalAmount     Float
   ShippingAddress String
-  Status          String        @default("PENDING") // PENDING, PROCESSING, SHIPPING, DELIVERED, PAID, CANCELLED
+  Status          String        @default("PENDING") // PENDING, PROCESSING, SHIPPING, DELIVERED, PAID, RECEIVED, CANCELLED
+  UserLat         Float?        // Tọa độ latitude của người dùng
+  UserLng         Float?        // Tọa độ longitude của người dùng
+  RoutePoints     Json?         // Mảng lộ trình từ OSRM [{lat, lng}, ...]
+  ShippingStartedAt DateTime?   // Thời điểm bắt đầu giao hàng
   CreatedAt       DateTime      @default(now())
   User            User          @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
   OrderDetails    OrderDetail[]
@@ -113,22 +119,31 @@ model Notification {
   User           User     @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
 }
 
-model ChatRoom {
-  ChatRoomId Int       @id @default(autoincrement())
-  UserId     Int
-  CreatedAt  DateTime  @default(now())
-  User       User      @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
-  Messages   Message[]
+model Conversation {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastMessage    String?
+  lastMessageAt  DateTime?
+  unreadCustomer Int       @default(0)
+  unreadAdmin    Int       @default(0)
+
+  User     User      @relation(fields: [userId], references: [UserId], onDelete: Cascade)
+  Messages Message[]
 }
 
 model Message {
-  MessageId  Int      @id @default(autoincrement())
-  ChatRoomId Int
-  SenderId   Int
-  Content    String
-  CreatedAt  DateTime @default(now())
-  ChatRoom   ChatRoom @relation(fields: [ChatRoomId], references: [ChatRoomId], onDelete: Cascade, onUpdate: NoAction)
-  Sender     User     @relation(fields: [SenderId], references: [UserId], onDelete: NoAction, onUpdate: NoAction)
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  senderType     String       // "Customer" | "Admin"
+  senderId       Int
+  message        String
+  createdAt      DateTime     @default(now())
+  isRead         Boolean      @default(false)
+  messageType    String       @default("TEXT") // TEXT, IMAGE, SYSTEM, FILE
+
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
 
 model ProductVariant {
@@ -188,4 +203,28 @@ model ProductAttribute {
   Name               String  // VD: "Thành phần", "Hướng dẫn sử dụng"
   Value              String  @db.Text
   Product            Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+}
+
+model NotificationLog {
+  NotificationLogId Int      @id @default(autoincrement())
+  OrderId           Int
+  UserId            Int
+  Type              String   // e.g. "ORDER_SHIPPING_STARTED", "ORDER_DELIVERED"
+  SentAt            DateTime @default(now())
+  Status            String   // "SUCCESS", "FAILED"
+  FailureReason     String?
+
+  @@unique([OrderId, Type]) // Idempotency constraint to prevent duplicates
+}
+
+model Wishlist {
+  WishlistId Int      @id @default(autoincrement())
+  UserId     Int
+  ProductId  Int
+  CreatedAt  DateTime @default(now())
+
+  User    User    @relation(fields: [UserId], references: [UserId], onDelete: Cascade)
+  Product Product @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade)
+
+  @@unique([UserId, ProductId])
 }

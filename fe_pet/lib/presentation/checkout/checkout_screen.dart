@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/url_helper.dart' as url_helper;
+import '../../core/widgets/map_location_picker.dart';
 import '../../providers/cart_provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -15,13 +17,12 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  final _addressController = TextEditingController(text: '123 Pet Paradise Way, Hanoi');
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
+  LatLng? _selectedLocation;
 
   @override
   void dispose() {
-    _addressController.dispose();
     super.dispose();
   }
 
@@ -44,7 +45,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _processCheckout(BuildContext context, CartProvider cartProvider) async {
-    if (!_formKey.currentState!.validate()) return;
+    // Validate location selection
+    if (_selectedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn vị trí giao hàng trên bản đồ'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -55,7 +66,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final orderResponse = await ApiClient().dio.post(
         '/orders',
         data: {
-          'ShippingAddress': _addressController.text.trim(),
+          'shippingLatitude': _selectedLocation!.latitude,
+          'shippingLongitude': _selectedLocation!.longitude,
           'selectedCartItemIds': cartProvider.selectedCartItemIds.toList(),
         },
       );
@@ -290,27 +302,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _addressController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Địa chỉ giao hàng',
-                                    hintText: 'Nhập địa chỉ chi tiết của bạn',
-                                    prefixIcon: const Icon(Icons.location_on_outlined),
-                                    filled: true,
-                                    fillColor: isDark
-                                        ? AppColors.inputBackgroundDark
-                                        : AppColors.inputBackground,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Vui lòng nhập địa chỉ giao hàng';
-                                    }
-                                    return null;
+                                
+                                // Map Location Picker
+                                MapLocationPicker(
+                                  initialLocation: _selectedLocation,
+                                  onLocationSelected: (location) {
+                                    setState(() {
+                                      _selectedLocation = location;
+                                    });
                                   },
                                 ),
                               ],
@@ -338,7 +337,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: (_isSubmitting || selectedItems.isEmpty)
+                          onPressed: (_isSubmitting || selectedItems.isEmpty || _selectedLocation == null)
                               ? null
                               : () => _processCheckout(context, cartProvider),
                           style: ElevatedButton.styleFrom(

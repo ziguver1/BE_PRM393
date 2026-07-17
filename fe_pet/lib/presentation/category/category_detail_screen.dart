@@ -128,8 +128,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                 final product = sortedProducts[index];
                 return ProductCard(
                   product: product,
+                  heroTagSuffix: 'category',
                   onTap: () => context.push(
-                    '/product/${product.productId}',
+                    '/product/${product.productId}?heroTag=product-img-${product.productId}category',
                     extra: product,
                   ),
                 );

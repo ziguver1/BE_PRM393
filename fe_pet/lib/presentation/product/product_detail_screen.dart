@@ -9,14 +9,18 @@ import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/wishlist_provider.dart';
+import '../../core/widgets/wishlist_heart_button.dart';
 import '../../services/product_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
+  final String? heroTag;
 
   const ProductDetailScreen({
     super.key,
     required this.product,
+    this.heroTag,
   });
 
   @override
@@ -28,7 +32,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _quantity = 1;
   int _selectedVariantIndex = 0;
   bool _isAddingToCart = false;
-  bool _isFavorite = false;
   int _currentImageIndex = 0;
 
   @override
@@ -44,21 +47,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       chars.insert(i, '.');
     }
     return '${chars.join()}đ';
-  }
-
-  void _onFavoriteToggle() {
-    setState(() => _isFavorite = !_isFavorite);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isFavorite
-              ? 'Đã thêm vào danh sách yêu thích!'
-              : 'Đã xoá khỏi danh sách yêu thích!',
-        ),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
 Future<bool> _addToCart(ProductModel product) async {
@@ -215,18 +203,33 @@ Future<bool> _addToCart(ProductModel product) async {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 8),
-          child: CircleAvatar(
-            backgroundColor: Colors.white.withValues(alpha: 0.85),
-            child: IconButton(
-              icon: Icon(
-                _isFavorite
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: _isFavorite ? Colors.redAccent : Colors.black87,
-                size: 22,
-              ),
-              onPressed: _onFavoriteToggle,
-            ),
+          child: Consumer<WishlistProvider>(
+            builder: (context, wishlistProvider, child) {
+              final isFav = wishlistProvider.isWishlisted(product.productId);
+              return CircleAvatar(
+                backgroundColor: Colors.white.withValues(alpha: 0.85),
+                child: WishlistHeartButton(
+                  product: product,
+                  isWishlisted: isFav,
+                  iconSize: 22,
+                  onTap: () async {
+                    try {
+                      await wishlistProvider.toggle(product);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Không thể cập nhật danh sách yêu thích.'),
+                            backgroundColor: Colors.red,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -234,50 +237,53 @@ Future<bool> _addToCart(ProductModel product) async {
         background: Stack(
           children: [
             // Image Carousel
-            CarouselSlider(
-              options: CarouselOptions(
-                height: double.infinity,
-                enlargeCenterPage: false,
-                enableInfiniteScroll: imageUrls.length > 1,
-                onPageChanged: (index, reason) {
-                  setState(() => _currentImageIndex = index);
-                },
-              ),
-              items: imageUrls.isEmpty
-                  ? [
-                      Container(
-                        color: Colors.grey[200],
-                        child: const Icon(
-                          Icons.pets_rounded,
-                          size: 80,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ]
-                  : imageUrls.map((imageUrl) {
-                      return CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => Container(
+            Hero(
+              tag: widget.heroTag ?? 'product-img-${product.productId}',
+              child: CarouselSlider(
+                options: CarouselOptions(
+                  height: double.infinity,
+                  enlargeCenterPage: false,
+                  enableInfiniteScroll: imageUrls.length > 1,
+                  onPageChanged: (index, reason) {
+                    setState(() => _currentImageIndex = index);
+                  },
+                ),
+                items: imageUrls.isEmpty
+                    ? [
+                        Container(
                           color: Colors.grey[200],
                           child: const Icon(
-                            Icons.image_not_supported_rounded,
-                            size: 50,
-                            color: Colors.grey,
+                            Icons.pets_rounded,
+                            size: 80,
+                            color: AppColors.primary,
                           ),
                         ),
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[100],
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
+                      ]
+                    : imageUrls.map((imageUrl) {
+                        return CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.image_not_supported_rounded,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[100],
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+              ),
             ),
 
             // Image Counter

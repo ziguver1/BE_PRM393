@@ -52,9 +52,31 @@ export class OrdersController {
         throw new AppError('Invalid order ID format.', 400);
       }
       const body = await req.json();
-      const validated = updateOrderStatusSchema.parse(body);
-      const updatedOrder = await orderService.updateStatus(orderId, validated.Status);
+      // Handle both uppercase "Status" and lowercase "status" keys
+      const rawStatus = body.Status || body.status;
+      const validated = updateOrderStatusSchema.parse({ Status: rawStatus });
+      const updatedOrder = await orderService.updateStatus(
+        orderId, 
+        validated.Status, 
+        context.user.userId, 
+        context.user.role
+      );
       return NextResponse.json(updatedOrder, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  async getTracking(req: NextRequest, context: { user: TokenPayload; params: { id: string } }) {
+    try {
+      const userId = context.user.userId;
+      const role = context.user.role;
+      const orderId = Number(context.params.id);
+      if (isNaN(orderId)) {
+        throw new AppError('Invalid order ID format.', 400);
+      }
+      const tracking = await orderService.getTracking(userId, role, orderId);
+      return NextResponse.json(tracking, { status: 200 });
     } catch (error) {
       return handleError(error);
     }

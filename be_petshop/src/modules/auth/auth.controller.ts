@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '../../services/auth.service';
 import { registerSchema, loginSchema, refreshSchema } from '../../validators/auth.validator';
-import { handleError } from '../../middleware/error.middleware';
+import { handleError, AppError } from '../../middleware/error.middleware';
+import { TokenPayload } from '../../lib/jwt';
 
 const authService = new AuthService();
 
@@ -44,6 +45,27 @@ export class AuthController {
       { message: 'Logged out successfully.' },
       { status: 200 }
     );
+  }
+
+  async updateFcmToken(req: NextRequest, context: { user: TokenPayload }) {
+    try {
+      const userId = context.user.userId;
+      const body = await req.json();
+      const fcmToken = body.fcmToken;
+
+      const tokenValue = (fcmToken === null || fcmToken === '') ? null : fcmToken;
+      if (tokenValue === undefined) {
+        throw new AppError('fcmToken is required.', 400);
+      }
+
+      await authService.updateFcmToken(userId, tokenValue);
+      return NextResponse.json({
+        success: true,
+        message: tokenValue ? 'FCM Device Token updated successfully.' : 'FCM Device Token cleared successfully.'
+      }, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
   }
 }
 export default AuthController;

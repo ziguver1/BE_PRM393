@@ -47,3 +47,7 @@ export const PUT = withAuth(
   (req, context) => controller.updateStatus(req, context),
   ['ADMIN']
 );
+
+export const PATCH = withAuth(
+  (req, context) => controller.updateStatus(req, context)
+);

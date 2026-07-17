@@ -181,6 +181,7 @@ class ProductModel extends Product {
     List<ProductVariant>? variants,
     String? variantLabel,
     String unit = 'cái',
+    bool isWishlisted = false,
     this.images,
     this.productVariants,
     this.productFilters,
@@ -197,6 +198,7 @@ class ProductModel extends Product {
     variants: variants,
     variantLabel: variantLabel,
     unit: unit,
+    isWishlisted: isWishlisted,
   );
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -219,6 +221,7 @@ class ProductModel extends Product {
           : null,
       variantLabel: json['VariantLabel'] as String?,
       unit: json['Unit'] as String? ?? 'cái',
+      isWishlisted: (json['IsWishlisted'] ?? json['isWishlisted']) as bool? ?? false,
       images: json['Images'] != null
           ? (json['Images'] as List)
               .map((img) => ProductImageModel.fromJson(img as Map<String, dynamic>))
@@ -249,6 +252,7 @@ class ProductModel extends Product {
       'ImageUrl': imageUrl,
       'CreatedAt': createdAt.toIso8601String(),
       'Unit': unit,
+      'IsWishlisted': isWishlisted,
       if (variantLabel != null) 'VariantLabel': variantLabel,
       if (category != null && category is CategoryModel)
         'Category': (category as CategoryModel).toJson(),

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/notification_service.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/notification_provider.dart';
+import '../../providers/wishlist_provider.dart';
 import 'home_screen.dart';
 import '../search/search_screen.dart';
 import '../cart/cart_screen.dart';
@@ -27,6 +32,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       CartScreen(),
       ProfileScreen(),
     ];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().initialize(context);
+      Provider.of<CartProvider>(context, listen: false).fetchCart(silent: true);
+      Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
+      Provider.of<WishlistProvider>(context, listen: false).loadWishlist();
+    });
   }
 
   int _calculateSelectedIndex(BuildContext context) {
@@ -127,10 +139,46 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: isSelected ? Colors.white : inactiveColor,
-                size: 24,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    color: isSelected ? Colors.white : inactiveColor,
+                    size: 24,
+                  ),
+                  if (index == 2)
+                    Consumer<CartProvider>(
+                      builder: (context, provider, child) {
+                        final count = provider.totalItems;
+                        if (count == 0) return const SizedBox.shrink();
+                        return Positioned(
+                          top: -6,
+                          right: -8,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '$count',
+                              style: TextStyle(
+                                color: isSelected ? AppColors.primary : Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
               ),
               if (isSelected) ...[
                 const SizedBox(width: 6),

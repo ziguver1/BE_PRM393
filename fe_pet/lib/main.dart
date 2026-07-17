@@ -7,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart' as provider_pkg;
 import 'providers/cart_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/notification_provider.dart';
+import 'providers/wishlist_provider.dart';
+import 'providers/support_chat_provider.dart';
 import 'core/configs/providers.dart';
 import 'core/routes/app_router.dart';
 import 'core/themes/app_theme.dart';
@@ -45,10 +48,13 @@ class PawMartApp extends ConsumerWidget {
     final router = ref.watch(appRouterHelperProvider);
     
     return provider_pkg.MultiProvider(
-      providers: [
-        provider_pkg.ChangeNotifierProvider(create: (_) => CartProvider()),
-        provider_pkg.ChangeNotifierProvider(create: (_) => ProductProvider()),
-      ],
+       providers: [
+         provider_pkg.ChangeNotifierProvider(create: (_) => CartProvider()),
+         provider_pkg.ChangeNotifierProvider(create: (_) => ProductProvider()),
+         provider_pkg.ChangeNotifierProvider(create: (_) => NotificationProvider()),
+         provider_pkg.ChangeNotifierProvider(create: (_) => WishlistProvider()),
+         provider_pkg.ChangeNotifierProvider(create: (_) => SupportChatProvider()),
+       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         title: 'PawMart',

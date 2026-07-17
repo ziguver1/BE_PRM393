@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 
 import '../core/network/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -196,6 +197,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await NotificationService().clearToken();
     await _authService.logout();
     _backendToken = null;
     notifyListeners();

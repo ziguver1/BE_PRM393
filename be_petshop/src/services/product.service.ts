@@ -2,6 +2,7 @@ import { ProductRepository } from '../repositories/product.repository';
 import { CategoryRepository } from '../repositories/category.repository';
 import { CreateProductInput, UpdateProductInput, ProductQueryInput } from '../validators/product.validator';
 import { AppError } from '../middleware/error.middleware';
+import prisma from '../lib/prisma';
 
 const productRepository = new ProductRepository();
 const categoryRepository = new CategoryRepository();
@@ -11,7 +12,7 @@ export class ProductService {
    * Get all products with filtering, searching, and pagination
    * Supports faceted search using filter options
    */
-  async getAllProducts(query: any) {
+  async getAllProducts(query: any, userId?: number) {
     try {
       // Parse and validate pagination parameters
       const page = Math.max(1, parseInt(query.page || '1', 10));
@@ -58,6 +59,26 @@ export class ProductService {
       // Call repository to fetch products
       const result = await productRepository.getProducts(params);
 
+      // Map isWishlisted
+      if (userId && result.data && result.data.length > 0) {
+        const wishlistProductIds = new Set(
+          (await prisma.wishlist.findMany({
+            where: { UserId: userId },
+            select: { ProductId: true },
+          })).map((w) => w.ProductId)
+        );
+        for (const product of result.data) {
+          const isWish = wishlistProductIds.has(product.ProductId);
+          product.isWishlisted = isWish;
+          product.IsWishlisted = isWish;
+        }
+      } else if (result.data) {
+        for (const product of result.data) {
+          product.isWishlisted = false;
+          product.IsWishlisted = false;
+        }
+      }
+
       return result;
     } catch (error) {
       if (error instanceof AppError) {
@@ -67,14 +88,46 @@ export class ProductService {
     }
   }
 
-  async getAll(params: ProductQueryInput) {
-    return productRepository.findAll(params);
+  async getAll(params: ProductQueryInput, userId?: number) {
+    const result = await productRepository.findAll(params);
+    // Map isWishlisted
+    if (userId && result.items && result.items.length > 0) {
+      const wishlistProductIds = new Set(
+        (await prisma.wishlist.findMany({
+          where: { UserId: userId },
+          select: { ProductId: true },
+        })).map((w) => w.ProductId)
+      );
+      for (const product of result.items) {
+        const isWish = wishlistProductIds.has(product.ProductId);
+        (product as any).isWishlisted = isWish;
+        (product as any).IsWishlisted = isWish;
+      }
+    } else if (result.items) {
+      for (const product of result.items) {
+        (product as any).isWishlisted = false;
+        (product as any).IsWishlisted = false;
+      }
+    }
+    return result;
   }
 
-  async getById(id: number) {
+  async getById(id: number, userId?: number) {
     const product = await productRepository.findById(id);
     if (!product) {
       throw new AppError('Product not found.', 404);
+    }
+    if (userId) {
+      const isWish = await prisma.wishlist.findUnique({
+        where: {
+          UserId_ProductId: { UserId: userId, ProductId: id },
+        },
+      });
+      (product as any).isWishlisted = !!isWish;
+      (product as any).IsWishlisted = !!isWish;
+    } else {
+      (product as any).isWishlisted = false;
+      (product as any).IsWishlisted = false;
     }
     return product;
   }

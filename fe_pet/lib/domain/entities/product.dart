@@ -41,6 +41,7 @@ class Product {
   final List<ProductVariant>? variants;
   final String? variantLabel;
   final String unit;
+  final bool isWishlisted;
 
   const Product({
     required this.productId,
@@ -55,6 +56,7 @@ class Product {
     this.variants,
     this.variantLabel,
     this.unit = 'cái',
+    this.isWishlisted = false,
   });
 
   bool get isOutOfStock => stock <= 0;
