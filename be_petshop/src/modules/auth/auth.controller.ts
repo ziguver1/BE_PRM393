@@ -29,6 +29,23 @@ export class AuthController {
     }
   }
 
+  async googleLogin(req: NextRequest) {
+    try {
+      const body = await req.json();
+      if (!body.Email || !body.FullName) {
+        throw new AppError('Email and FullName are required for Google login.', 400);
+      }
+      const result = await authService.googleLogin({
+        Email: body.Email,
+        FullName: body.FullName,
+        Avatar: body.Avatar,
+      });
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
   async refresh(req: NextRequest) {
     try {
       const body = await req.json();

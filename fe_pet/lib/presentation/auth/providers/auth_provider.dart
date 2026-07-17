@@ -115,12 +115,20 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> loginWithGoogleUser(User googleUser) async {
+  Future<void> loginWithGoogleUser({
+    required String email,
+    required String uid,
+    required String displayName,
+    String? photoUrl,
+  }) async {
     state = AuthState.loading();
     try {
-      await _repository.saveUser(googleUser);
-      await _repository.saveTokens('google_auth_placeholder', 'google_auth_placeholder');
-      state = AuthState.authenticated(googleUser);
+      final user = await _repository.googleLogin(
+        email: email,
+        fullName: displayName,
+        avatar: photoUrl,
+      );
+      state = AuthState.authenticated(user);
     } catch (e) {
       state = AuthState.error(e.toString());
     }

@@ -17,6 +17,19 @@ class AuthRemoteDataSource {
     return AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<AuthResponseModel> googleLogin({
+    required String email,
+    required String fullName,
+    String? avatar,
+  }) async {
+    final response = await _client.dio.post('/auth/google', data: {
+      'Email': email,
+      'FullName': fullName,
+      if (avatar != null) 'Avatar': avatar,
+    });
+    return AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<AuthResponseModel> register({
     required String fullName,
     required String email,

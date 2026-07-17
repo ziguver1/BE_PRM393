@@ -9,7 +9,6 @@ import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
 import 'providers/auth_provider.dart';
 import '../../services/auth_service.dart';
-import '../../domain/entities/user.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -50,16 +49,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final credential = await AuthService.signInWithGoogle();
       if (credential != null && credential.user != null) {
         final fbUser = credential.user!;
-        final user = User(
-          userId: fbUser.uid.hashCode,
-          fullName: fbUser.displayName ?? 'Google User',
-          email: fbUser.email ?? '',
-          avatar: fbUser.photoURL,
-          role: 'CUSTOMER',
-        );
 
         if (mounted) {
-          await ref.read(authNotifierProvider.notifier).loginWithGoogleUser(user);
+          await ref.read(authNotifierProvider.notifier).loginWithGoogleUser(
+                email: fbUser.email ?? '',
+                uid: fbUser.uid,
+                displayName: fbUser.displayName ?? 'Google User',
+                photoUrl: fbUser.photoURL,
+              );
         }
       } else {
         if (mounted) {

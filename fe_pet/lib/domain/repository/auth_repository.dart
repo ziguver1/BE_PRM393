@@ -6,6 +6,12 @@ abstract class AuthRepository {
     required String password,
   });
 
+  Future<User> googleLogin({
+    required String email,
+    required String fullName,
+    String? avatar,
+  });
+
   Future<User> register({
     required String fullName,
     required String email,

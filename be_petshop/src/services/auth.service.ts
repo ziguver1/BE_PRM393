@@ -108,6 +108,52 @@ export class AuthService {
     };
   }
 
+  async googleLogin(input: { Email: string; FullName: string; Avatar?: string | null }) {
+    let user = await userRepository.findByEmail(input.Email);
+
+    if (!user) {
+      const salt = await bcrypt.genSalt(10);
+      const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+      const passwordHash = await bcrypt.hash(randomPassword, salt);
+
+      user = await userRepository.create({
+        FullName: input.FullName,
+        Email: input.Email,
+        PasswordHash: passwordHash,
+        Phone: null,
+        Avatar: input.Avatar || null,
+        Role: 'CUSTOMER',
+      });
+    } else {
+      if (!user.Avatar && input.Avatar) {
+        await userRepository.update(user.UserId, { Avatar: input.Avatar });
+        user.Avatar = input.Avatar;
+      }
+    }
+
+    const payload: TokenPayload = {
+      userId: user.UserId,
+      email: user.Email,
+      role: user.Role,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    return {
+      user: {
+        UserId: user.UserId,
+        FullName: user.FullName,
+        Email: user.Email,
+        Phone: user.Phone,
+        Avatar: user.Avatar,
+        Role: user.Role,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
   async updateFcmToken(userId: number, fcmToken: string) {
     return userRepository.update(userId, { fcmToken });
   }

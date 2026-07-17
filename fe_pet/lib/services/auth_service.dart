@@ -119,9 +119,13 @@ class AuthService {
     try {
       await _staticInitializeGoogleSignIn();
       if (kIsWeb) {
+        // Force the account chooser to appear every time on web
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.setCustomParameters({'prompt': 'select_account'});
         return await _auth.signInWithPopup(googleProvider);
       } else {
+        // Sign out the cached Google account first so the picker always shows
+        await _staticGoogleSignIn.signOut();
         final googleUser = await _staticGoogleSignIn.authenticate();
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
         final OAuthCredential credential = GoogleAuthProvider.credential(
