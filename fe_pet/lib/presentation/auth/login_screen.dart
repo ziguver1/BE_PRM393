@@ -8,6 +8,8 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
 import 'providers/auth_provider.dart';
+import '../../services/auth_service.dart';
+import '../../domain/entities/user.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -35,6 +38,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+    }
+  }
+
+  Future<void> _onGoogleLogin() async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isGoogleLoading = true;
+    });
+    try {
+      final credential = await AuthService.signInWithGoogle();
+      if (credential != null && credential.user != null) {
+        final fbUser = credential.user!;
+        final user = User(
+          userId: fbUser.uid.hashCode,
+          fullName: fbUser.displayName ?? 'Google User',
+          email: fbUser.email ?? '',
+          avatar: fbUser.photoURL,
+          role: 'CUSTOMER',
+        );
+
+        if (mounted) {
+          await ref.read(authNotifierProvider.notifier).loginWithGoogleUser(user);
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Google login failed'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google login failed'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
     }
   }
 
@@ -148,6 +201,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     text: 'Đăng Nhập',
                     isLoading: authState.status == AuthStatus.loading,
                     onPressed: _onLogin,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: _isGoogleLoading || authState.status == AuthStatus.loading
+                          ? null
+                          : _onGoogleLogin,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: isLight ? Colors.grey.shade300 : Colors.grey.shade700,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isGoogleLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.network(
+                                  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
+                                  height: 20,
+                                  width: 20,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.g_mobiledata_rounded,
+                                    color: Colors.red,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Continue with Google',
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isLight ? Colors.black87 : Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   Row(

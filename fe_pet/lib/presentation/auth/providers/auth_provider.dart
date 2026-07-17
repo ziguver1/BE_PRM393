@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import '../../../core/configs/providers.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/repository/auth_repository.dart';
+import '../../../services/auth_service.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
@@ -54,12 +56,24 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> restoreSession() async {
     state = AuthState.loading();
     try {
-      final user = await _repository.getSavedUser();
-      final token = await _repository.getSavedAccessToken();
-      if (user != null && token != null) {
+      final fbUser = fb.FirebaseAuth.instance.currentUser;
+      if (fbUser != null) {
+        final user = User(
+          userId: fbUser.uid.hashCode,
+          fullName: fbUser.displayName ?? 'Google User',
+          email: fbUser.email ?? '',
+          avatar: fbUser.photoURL,
+          role: 'CUSTOMER',
+        );
         state = AuthState.authenticated(user);
       } else {
-        state = AuthState.unauthenticated();
+        final user = await _repository.getSavedUser();
+        final token = await _repository.getSavedAccessToken();
+        if (user != null && token != null) {
+          state = AuthState.authenticated(user);
+        } else {
+          state = AuthState.unauthenticated();
+        }
       }
     } catch (_) {
       state = AuthState.unauthenticated();
@@ -101,9 +115,21 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<void> loginWithGoogleUser(User googleUser) async {
+    state = AuthState.loading();
+    try {
+      await _repository.saveUser(googleUser);
+      await _repository.saveTokens('google_auth_placeholder', 'google_auth_placeholder');
+      state = AuthState.authenticated(googleUser);
+    } catch (e) {
+      state = AuthState.error(e.toString());
+    }
+  }
+
   Future<void> logout() async {
     state = AuthState.loading();
     try {
+      await AuthService.signOut();
       await _repository.logout();
     } finally {
       state = AuthState.unauthenticated();

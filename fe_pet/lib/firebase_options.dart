@@ -63,13 +63,13 @@ class DefaultFirebaseOptions {
     projectId: 'hcm202-2d75e',
     storageBucket: 'hcm202-2d75e.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDKCJPKIpl08MNLfGhaGrV2ijw9VwbyAAY',
     appId: '1:837187985882:ios:7c868a27415b01283660e3',
     messagingSenderId: '837187985882',
     projectId: 'hcm202-2d75e',
     storageBucket: 'hcm202-2d75e.firebasestorage.app',
+    androidClientId: '837187985882-6lg1da72t6so9vb6lc318otmu3vb43ua.apps.googleusercontent.com',
     iosClientId: '837187985882-blt8pt7ojim4n6141e3nui83tkve3p1a.apps.googleusercontent.com',
     iosBundleId: 'com.example.fePet',
   );
