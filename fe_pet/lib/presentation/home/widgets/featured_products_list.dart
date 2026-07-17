@@ -24,13 +24,20 @@ class FeaturedProductsList extends ConsumerWidget {
             children: [
               Text(
                 'Sản phẩm nổi bật',
-                style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
+                style: AppTextStyles.h3.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
               TextButton(
-                onPressed: () => context.push('/search'),
+                onPressed: () => context.push('/featured-products'),
                 child: const Text(
                   'Xem tất cả',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
@@ -41,7 +48,7 @@ class FeaturedProductsList extends ConsumerWidget {
           data: (products) {
             if (products.isEmpty) return const SizedBox.shrink();
             return SizedBox(
-              height: 295,
+              height: 270,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -49,7 +56,7 @@ class FeaturedProductsList extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final product = products[index];
                   return Container(
-                    width: 155,
+                    width: 148,
                     margin: const EdgeInsets.only(right: 14),
                     child: ProductCard(
                       product: product,
@@ -65,13 +72,13 @@ class FeaturedProductsList extends ConsumerWidget {
             );
           },
           loading: () => SizedBox(
-            height: 295,
+            height: 270,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: 3,
               itemBuilder: (context, index) => Container(
-                width: 155,
+                width: 148,
                 margin: const EdgeInsets.only(right: 14),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],

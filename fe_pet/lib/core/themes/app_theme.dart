@@ -31,7 +31,9 @@ class AppTheme {
         elevation: 2,
         shadowColor: Colors.black12,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.cardRadius)),
+          borderRadius: BorderRadius.all(
+            Radius.circular(AppSpacing.cardRadius),
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -61,23 +63,30 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTextStyles.labelMedium,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.inputBackground,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: AppColors.inputBorder,
+            width: 1.2,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: AppColors.inputBorder,
+            width: 1.2,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
@@ -87,8 +96,16 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        labelStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondary,
+        ),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
@@ -131,13 +148,17 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: AppColors.textPrimaryDark),
-        titleTextStyle: AppTextStyles.h3.copyWith(color: AppColors.textPrimaryDark),
+        titleTextStyle: AppTextStyles.h3.copyWith(
+          color: AppColors.textPrimaryDark,
+        ),
       ),
       cardTheme: const CardThemeData(
         color: AppColors.surfaceDark,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.cardRadius)),
+          borderRadius: BorderRadius.all(
+            Radius.circular(AppSpacing.cardRadius),
+          ),
           side: BorderSide(color: AppColors.borderDark, width: 1),
         ),
       ),
@@ -168,23 +189,30 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTextStyles.labelMedium,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.inputBackgroundDark,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: AppColors.inputBorderDark,
+            width: 1.2,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: AppColors.inputBorderDark,
+            width: 1.2,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
@@ -194,8 +222,16 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        labelStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondaryDark,
+        ),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondaryDark,
+        ),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.borderDark,
@@ -257,17 +293,28 @@ class HeaderThemeExtension extends ThemeExtension<HeaderThemeExtension> {
   }
 
   @override
-  HeaderThemeExtension lerp(ThemeExtension<HeaderThemeExtension>? other, double t) {
+  HeaderThemeExtension lerp(
+    ThemeExtension<HeaderThemeExtension>? other,
+    double t,
+  ) {
     if (other is! HeaderThemeExtension) {
       return this;
     }
     return HeaderThemeExtension(
-      backgroundGradient: Gradient.lerp(backgroundGradient, other.backgroundGradient, t)!,
+      backgroundGradient: Gradient.lerp(
+        backgroundGradient,
+        other.backgroundGradient,
+        t,
+      )!,
       radialGlowColor: Color.lerp(radialGlowColor, other.radialGlowColor, t)!,
       height: lerpDouble(height, other.height, t)!,
       searchBarBg: Color.lerp(searchBarBg, other.searchBarBg, t)!,
       searchBarRadius: lerpDouble(searchBarRadius, other.searchBarRadius, t)!,
-      floatingButtonBg: Color.lerp(floatingButtonBg, other.floatingButtonBg, t)!,
+      floatingButtonBg: Color.lerp(
+        floatingButtonBg,
+        other.floatingButtonBg,
+        t,
+      )!,
     );
   }
 }

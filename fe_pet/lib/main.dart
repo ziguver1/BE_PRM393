@@ -32,9 +32,7 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const PawMartApp(),
     ),
   );
@@ -46,22 +44,67 @@ class PawMartApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterHelperProvider);
-    
+
     return provider_pkg.MultiProvider(
-       providers: [
-         provider_pkg.ChangeNotifierProvider(create: (_) => CartProvider()),
-         provider_pkg.ChangeNotifierProvider(create: (_) => ProductProvider()),
-         provider_pkg.ChangeNotifierProvider(create: (_) => NotificationProvider()),
-         provider_pkg.ChangeNotifierProvider(create: (_) => WishlistProvider()),
-         provider_pkg.ChangeNotifierProvider(create: (_) => SupportChatProvider()),
-       ],
+      providers: [
+        provider_pkg.ChangeNotifierProvider(create: (_) => CartProvider()),
+        provider_pkg.ChangeNotifierProvider(create: (_) => ProductProvider()),
+        provider_pkg.ChangeNotifierProvider(
+          create: (_) => NotificationProvider(),
+        ),
+        provider_pkg.ChangeNotifierProvider(create: (_) => WishlistProvider()),
+        provider_pkg.ChangeNotifierProvider(
+          create: (_) => SupportChatProvider(),
+        ),
+      ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         title: 'PawMart',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        // Keep UI consistent across local desktop and emulator.
+        themeMode: ThemeMode.light,
         routerConfig: router,
+        builder: (context, child) {
+          if (child == null) return const SizedBox.shrink();
+          return _Pixel7Viewport(child: child);
+        },
+      ),
+    );
+  }
+}
+
+class _Pixel7Viewport extends StatelessWidget {
+  const _Pixel7Viewport({required this.child});
+
+  final Widget child;
+
+  static const Size _pixel7Size = Size(412, 915);
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final frameBackground = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF121212)
+        : const Color(0xFFF5F5F5);
+
+    return ColoredBox(
+      color: frameBackground,
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: _pixel7Size.width,
+            height: _pixel7Size.height,
+            child: MediaQuery(
+              data: media.copyWith(
+                size: _pixel7Size,
+                textScaler: const TextScaler.linear(1.0),
+              ),
+              child: child,
+            ),
+          ),
+        ),
       ),
     );
   }

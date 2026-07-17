@@ -35,13 +35,55 @@ class _CartScreenState extends State<CartScreen> {
     return '${parts.reversed.join()}đ';
   }
 
+  Future<void> _confirmRemoveItem(
+    BuildContext context,
+    CartProvider cartProvider,
+    CartItem item,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa?'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa "${item.product.name}" khỏi giỏ hàng?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await cartProvider.removeFromCart(item.cartItemId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã xóa "${item.product.name}" khỏi giỏ hàng.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.black87,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartProvider = context.watch<CartProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text(
           'Giỏ hàng của bạn',
@@ -99,7 +141,11 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildMainContent(BuildContext context, CartProvider cartProvider, bool isDark) {
+  Widget _buildMainContent(
+    BuildContext context,
+    CartProvider cartProvider,
+    bool isDark,
+  ) {
     if (cartProvider.isLoading && cartProvider.cart == null) {
       return const Center(
         child: Column(
@@ -134,36 +180,32 @@ class _CartScreenState extends State<CartScreen> {
                 child: Icon(
                   Icons.shopping_basket_outlined,
                   size: 64,
-                  color: AppColors.primary.withOpacity(0.6),
+                  color: AppColors.primary.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 24),
               const Text(
                 'Giỏ hàng đang trống!',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Hãy ghé thăm cửa hàng và chọn các loại hạt, pate ngon nhất cho thú cưng của bạn nhé.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  height: 1.4,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.4),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.go('/home'),
                 icon: const Icon(Icons.shopping_bag_outlined),
                 label: const Text('Mua sắm ngay'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
@@ -191,7 +233,8 @@ class _CartScreenState extends State<CartScreen> {
     CartProvider cartProvider,
     bool isDark,
   ) {
-    final isCat = item.product.name.toLowerCase().contains('cat') ||
+    final isCat =
+        item.product.name.toLowerCase().contains('cat') ||
         item.product.name.toLowerCase().contains('kitten') ||
         item.product.name.toLowerCase().contains('mèo');
 
@@ -201,7 +244,9 @@ class _CartScreenState extends State<CartScreen> {
       elevation: 0.5,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+        side: BorderSide(
+          color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -212,40 +257,8 @@ class _CartScreenState extends State<CartScreen> {
             extentRatio: 0.25,
             children: [
               SlidableAction(
-                onPressed: (context) async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Xác nhận xóa?'),
-                      content: Text(
-                        'Bạn có chắc chắn muốn xóa "${item.product.name}" khỏi giỏ hàng?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Hủy'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: const Text('Xóa'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    cartProvider.removeFromCart(item.cartItemId);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Đã xóa "${item.product.name}" khỏi giỏ hàng.'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.black87,
-                        ),
-                      );
-                    }
-                  }
-                },
+                onPressed: (_) =>
+                    _confirmRemoveItem(context, cartProvider, item),
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 icon: Icons.delete_rounded,
@@ -263,8 +276,11 @@ class _CartScreenState extends State<CartScreen> {
                   child: Checkbox(
                     value: cartProvider.isSelected(item.cartItemId),
                     activeColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    onChanged: (_) => cartProvider.toggleSelectItem(item.cartItemId),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    onChanged: (_) =>
+                        cartProvider.toggleSelectItem(item.cartItemId),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -275,12 +291,18 @@ class _CartScreenState extends State<CartScreen> {
                       aspectRatio: 1.0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[850] : (isCat ? Colors.orange.shade50 : Colors.blue.shade50),
+                          color: isDark
+                              ? Colors.grey[850]
+                              : (isCat
+                                    ? Colors.orange.shade50
+                                    : Colors.blue.shade50),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: item.product.imageUrl != null && item.product.imageUrl!.isNotEmpty
+                          child:
+                              item.product.imageUrl != null &&
+                                  item.product.imageUrl!.isNotEmpty
                               ? CachedNetworkImage(
                                   imageUrl: item.product.imageUrl!,
                                   fit: BoxFit.cover,
@@ -293,7 +315,9 @@ class _CartScreenState extends State<CartScreen> {
                                   errorWidget: (context, url, err) => Center(
                                     child: Icon(
                                       isCat ? Icons.pets : Icons.pets_rounded,
-                                      color: AppColors.primary.withOpacity(0.5),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.5,
+                                      ),
                                       size: 28,
                                     ),
                                   ),
@@ -301,7 +325,9 @@ class _CartScreenState extends State<CartScreen> {
                               : Center(
                                   child: Icon(
                                     isCat ? Icons.pets : Icons.pets_rounded,
-                                    color: AppColors.primary.withOpacity(0.5),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.5,
+                                    ),
                                     size: 28,
                                   ),
                                 ),
@@ -328,12 +354,17 @@ class _CartScreenState extends State<CartScreen> {
                       if (item.selectedVariant.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: isDark ? Colors.grey[850] : Colors.grey[100],
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: isDark ? AppColors.borderDark : Colors.grey[200]!,
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey[200]!,
                               width: 0.5,
                             ),
                           ),
@@ -341,7 +372,9 @@ class _CartScreenState extends State<CartScreen> {
                             'Phân loại: ${item.selectedVariant}',
                             style: TextStyle(
                               fontSize: 10,
-                              color: isDark ? Colors.grey[300] : Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[300]
+                                  : Colors.grey[600],
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -362,9 +395,15 @@ class _CartScreenState extends State<CartScreen> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade200),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.borderDark
+                                    : Colors.grey.shade200,
+                              ),
                               borderRadius: BorderRadius.circular(20),
-                              color: isDark ? Colors.grey[850] : Colors.grey.shade50,
+                              color: isDark
+                                  ? Colors.grey[850]
+                                  : Colors.grey.shade50,
                             ),
                             child: Row(
                               children: [
@@ -380,7 +419,9 @@ class _CartScreenState extends State<CartScreen> {
                                   },
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
                                   child: Text(
                                     item.quantity.toString(),
                                     style: const TextStyle(
@@ -393,9 +434,13 @@ class _CartScreenState extends State<CartScreen> {
                                   icon: Icons.add,
                                   onPressed: () {
                                     if (item.quantity >= item.product.stock) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
-                                          content: Text('Số lượng tối đa trong kho: ${item.product.stock}'),
+                                          content: Text(
+                                            'Số lượng tối đa trong kho: ${item.product.stock}',
+                                          ),
                                           backgroundColor: Colors.red.shade700,
                                           behavior: SnackBarBehavior.floating,
                                         ),
@@ -410,6 +455,17 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ],
                             ),
+                          ),
+                          IconButton(
+                            onPressed: () =>
+                                _confirmRemoveItem(context, cartProvider, item),
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                              size: 20,
+                            ),
+                            tooltip: 'Xóa sản phẩm',
+                            splashRadius: 20,
                           ),
                         ],
                       ),
@@ -456,13 +512,15 @@ class _CartScreenState extends State<CartScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
         ],
         border: Border(
-          top: BorderSide(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+          top: BorderSide(
+            color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+          ),
         ),
       ),
       child: SafeArea(
@@ -480,7 +538,9 @@ class _CartScreenState extends State<CartScreen> {
                 Checkbox(
                   value: cartProvider.allSelected,
                   activeColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   onChanged: (_) => cartProvider.toggleSelectAll(),
                 ),
                 const Text(
@@ -522,7 +582,10 @@ class _CartScreenState extends State<CartScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),

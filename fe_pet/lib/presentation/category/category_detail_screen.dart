@@ -12,11 +12,17 @@ import '../../core/configs/providers.dart';
 
 // Family provider to load category products
 // Use datasource directly to get ProductModel with full relations (images, variants, filters)
-final categoryProductsProvider = FutureProvider.family<List<ProductModel>, int>((ref, catId) async {
-  final dataSource = ref.watch(productRemoteDataSourceProvider);
-  final result = await dataSource.getProducts(page: 1, limit: 50, categoryId: catId);
-  return result.data;
-});
+final categoryProductsProvider = FutureProvider.family<List<ProductModel>, int>(
+  (ref, catId) async {
+    final dataSource = ref.watch(productRemoteDataSourceProvider);
+    final result = await dataSource.getProducts(
+      page: 1,
+      limit: 50,
+      categoryId: catId,
+    );
+    return result.data;
+  },
+);
 
 class CategoryDetailScreen extends ConsumerStatefulWidget {
   final int categoryId;
@@ -29,7 +35,8 @@ class CategoryDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CategoryDetailScreen> createState() => _CategoryDetailScreenState();
+  ConsumerState<CategoryDetailScreen> createState() =>
+      _CategoryDetailScreenState();
 }
 
 class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
@@ -49,7 +56,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
         sorted.sort((a, b) => b.price.compareTo(a.price));
       }
     } else if (_sortBy == 'name') {
-      sorted.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      sorted.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
     } else {
       // createdAt sort - newest first
       sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -60,7 +69,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final productsAsync = ref.watch(categoryProductsProvider(widget.categoryId));
+    final productsAsync = ref.watch(
+      categoryProductsProvider(widget.categoryId),
+    );
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
@@ -101,12 +112,16 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Chưa có sản phẩm nào',
-                      style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTextStyles.h3.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Vui lòng quay lại sau.',
-                      style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
@@ -119,7 +134,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
               padding: const EdgeInsets.all(AppSpacing.m),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.62,
+                childAspectRatio: 0.64,
                 crossAxisSpacing: AppSpacing.m,
                 mainAxisSpacing: AppSpacing.m,
               ),
@@ -141,7 +156,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
             padding: const EdgeInsets.all(AppSpacing.m),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.62,
+              childAspectRatio: 0.64,
               crossAxisSpacing: AppSpacing.m,
               mainAxisSpacing: AppSpacing.m,
             ),
@@ -175,7 +190,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.cardRadius),
+        ),
       ),
       builder: (context) {
         return Container(
@@ -190,9 +207,14 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
               ),
               const SizedBox(height: AppSpacing.m),
               ListTile(
-                leading: const Icon(Icons.star_rounded, color: AppColors.primary),
+                leading: const Icon(
+                  Icons.star_rounded,
+                  color: AppColors.primary,
+                ),
                 title: const Text('Mới nhất'),
-                trailing: _sortBy == 'createdAt' ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                trailing: _sortBy == 'createdAt'
+                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
                 onTap: () {
                   setState(() {
                     _sortBy = 'createdAt';
@@ -202,9 +224,14 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.arrow_downward_rounded, color: AppColors.primary),
+                leading: const Icon(
+                  Icons.arrow_downward_rounded,
+                  color: AppColors.primary,
+                ),
                 title: const Text('Giá: Thấp đến Cao'),
-                trailing: _sortBy == 'price' && _sortOrder == 'asc' ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                trailing: _sortBy == 'price' && _sortOrder == 'asc'
+                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
                 onTap: () {
                   setState(() {
                     _sortBy = 'price';
@@ -214,9 +241,14 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.arrow_upward_rounded, color: AppColors.primary),
+                leading: const Icon(
+                  Icons.arrow_upward_rounded,
+                  color: AppColors.primary,
+                ),
                 title: const Text('Giá: Cao đến Thấp'),
-                trailing: _sortBy == 'price' && _sortOrder == 'desc' ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                trailing: _sortBy == 'price' && _sortOrder == 'desc'
+                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
                 onTap: () {
                   setState(() {
                     _sortBy = 'price';
@@ -226,9 +258,14 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.sort_by_alpha_rounded, color: AppColors.primary),
+                leading: const Icon(
+                  Icons.sort_by_alpha_rounded,
+                  color: AppColors.primary,
+                ),
                 title: const Text('Tên sản phẩm (A-Z)'),
-                trailing: _sortBy == 'name' ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                trailing: _sortBy == 'name'
+                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
                 onTap: () {
                   setState(() {
                     _sortBy = 'name';

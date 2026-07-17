@@ -17,6 +17,7 @@ import '../../presentation/profile/address_book_screen.dart';
 import '../../presentation/profile/change_password_screen.dart';
 import '../../presentation/category/category_detail_screen.dart';
 import '../../presentation/product/product_detail_loader.dart';
+import '../../presentation/product/featured_products_screen.dart';
 import '../../presentation/checkout/checkout_screen.dart';
 import '../../presentation/checkout/payment_webview_screen.dart';
 import '../../presentation/order/order_history_screen.dart';
@@ -26,48 +27,49 @@ import '../../presentation/wishlist/wishlist_screen.dart';
 import '../../presentation/auth/providers/auth_provider.dart';
 import '../../data/models/product_model.dart';
 
-
 class RouterTransitionNotifier extends ChangeNotifier {
   final Ref _ref;
 
   RouterTransitionNotifier(this._ref) {
-    _ref.listen(
-      authNotifierProvider,
-      (previous, next) {
-        notifyListeners();
-      },
-    );
+    _ref.listen(authNotifierProvider, (previous, next) {
+      notifyListeners();
+    });
   }
 }
 
-final routerTransitionNotifierProvider = Provider<RouterTransitionNotifier>((ref) {
+final routerTransitionNotifierProvider = Provider<RouterTransitionNotifier>((
+  ref,
+) {
   return RouterTransitionNotifier(ref);
 });
 
 final appRouterHelperProvider = Provider<GoRouter>((ref) {
   final refreshListenable = ref.watch(routerTransitionNotifierProvider);
-  
+
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
-      
-      final isAuthPath = state.matchedLocation == '/login' ||
-                         state.matchedLocation == '/register' ||
-                         state.matchedLocation == '/forgot-password' ||
-                         state.matchedLocation == '/splash';
+
+      final isAuthPath =
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/forgot-password' ||
+          state.matchedLocation == '/splash';
 
       // Keep showing splash or loading indicator during session restore
-      if (authState.status == AuthStatus.initial || authState.status == AuthStatus.loading) {
+      if (authState.status == AuthStatus.initial ||
+          authState.status == AuthStatus.loading) {
         return null;
       }
 
       // If user is unauthenticated, redirect to /login unless they are already on an auth form route
       if (authState.status == AuthStatus.unauthenticated) {
-        final isAuthFormPath = state.matchedLocation == '/login' ||
-                               state.matchedLocation == '/register' ||
-                               state.matchedLocation == '/forgot-password';
+        final isAuthFormPath =
+            state.matchedLocation == '/login' ||
+            state.matchedLocation == '/register' ||
+            state.matchedLocation == '/forgot-password';
         return isAuthFormPath ? null : '/login';
       }
 
@@ -83,10 +85,7 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
@@ -95,7 +94,7 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         path: '/forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
-      
+
       // Bottom navigation tabs shell route
       ShellRoute(
         builder: (context, state, child) {
@@ -124,7 +123,7 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      
+
       // Inner detail routes
       GoRoute(
         path: '/category/:id',
@@ -148,6 +147,10 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
             heroTag: heroTag,
           );
         },
+      ),
+      GoRoute(
+        path: '/featured-products',
+        builder: (context, state) => const FeaturedProductsScreen(),
       ),
       GoRoute(
         path: '/checkout',
@@ -189,10 +192,7 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
       ),
-      GoRoute(
-        path: '/chat',
-        builder: (context, state) => const ChatScreen(),
-      ),
+      GoRoute(path: '/chat', builder: (context, state) => const ChatScreen()),
       GoRoute(
         path: '/wishlist',
         builder: (context, state) => const WishlistScreen(),

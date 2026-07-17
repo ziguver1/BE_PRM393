@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/home_provider.dart';
 import '../../../core/constants/app_colors.dart';
@@ -9,30 +8,28 @@ import '../../../core/constants/app_colors.dart';
 class CategoryGridWidget extends ConsumerWidget {
   const CategoryGridWidget({super.key});
   Widget _buildCategoryImage(String categoryName) {
-  // Ánh xạ tên danh mục với file ảnh cụ thể
-  // Đảm bảo các file này tồn tại trong public/images/
-  final String imageName = switch (categoryName.toLowerCase()) {
-    'thức ăn' => 'pets_icon.png',
-    'bánh thưởng' => 'pets_icon.png',
-    'phụ kiện' => 'pets_icon.png',
-    'chăm sóc' => 'pets_icon.png',
-    'vệ sinh' => 'pets_icon.png',
-    'đồ chơi' => 'pets_icon.png',
-    _ => 'pets_icon.png',
-  };
+    // Ánh xạ tên danh mục với file ảnh cụ thể
+    // Đảm bảo các file này tồn tại trong public/images/
+    final String imageName = switch (categoryName.toLowerCase()) {
+      'thức ăn' => 'pets_icon.png',
+      'bánh thưởng' => 'pets_icon.png',
+      'phụ kiện' => 'pets_icon.png',
+      'chăm sóc' => 'pets_icon.png',
+      'vệ sinh' => 'pets_icon.png',
+      'đồ chơi' => 'pets_icon.png',
+      _ => 'pets_icon.png',
+    };
 
-  return Image.asset(
-    'public/images/$imageName',
-    width: 28,
-    height: 28,
-    fit: BoxFit.cover,
-    errorBuilder: (context, error, stackTrace) => const Icon(
-      Icons.pets_rounded,
-      color: AppColors.primary,
-      size: 20,
-    ),
-  );
-} 
+    return Image.asset(
+      'public/images/$imageName',
+      width: 28,
+      height: 28,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.pets_rounded, color: AppColors.primary, size: 20),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(homeCategoriesProvider);
@@ -44,7 +41,7 @@ class CategoryGridWidget extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
                 'Danh mục nổi bật',
@@ -52,22 +49,6 @@ class CategoryGridWidget extends ConsumerWidget {
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF2F2F2F),
-                ),
-              ),
-              TextButton(
-                onPressed: () => context.push('/search'),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Xem tất cả',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
                 ),
               ),
             ],
@@ -88,7 +69,8 @@ class CategoryGridWidget extends ConsumerWidget {
                   crossAxisCount: 2, // 2 horizontal rows
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 14,
-                  childAspectRatio: 0.95, // Adjust aspect ratio for horizontal list spacing
+                  childAspectRatio:
+                      0.95, // Adjust aspect ratio for horizontal list spacing
                 ),
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
@@ -105,15 +87,15 @@ class CategoryGridWidget extends ConsumerWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: isDark 
-                                ? AppColors.primary.withOpacity(0.15) 
-                                : AppColors.primary.withOpacity(0.08),
+                            color: isDark
+                                ? AppColors.primary.withValues(alpha: 0.15)
+                                : AppColors.primary.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
                             child: ClipOval(
-  child: _buildCategoryImage(category.name),
-),
+                              child: _buildCategoryImage(category.name),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -127,7 +109,9 @@ class CategoryGridWidget extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.grey[300] : const Color(0xFF4F4F4F),
+                              color: isDark
+                                  ? Colors.grey[300]
+                                  : const Color(0xFF4F4F4F),
                             ),
                           ),
                         ),
@@ -165,11 +149,7 @@ class CategoryGridWidget extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
-                      width: 50,
-                      height: 10,
-                      color: Colors.white,
-                    ),
+                    Container(width: 50, height: 10, color: Colors.white),
                   ],
                 ),
               ),

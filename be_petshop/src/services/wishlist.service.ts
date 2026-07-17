@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { AppError } from '../middleware/error.middleware';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export class WishlistService {
   async getWishlist(userId: number) {

@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import fs from 'fs';
@@ -6,8 +5,7 @@ import path from 'path';
 import { NotificationRepository } from '../repositories/notification.repository';
 import { CreateNotificationInput } from '../validators/notification.validator';
 import { AppError } from '../middleware/error.middleware';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 const notificationRepository = new NotificationRepository();
 
 let isFirebaseInitialized = false;

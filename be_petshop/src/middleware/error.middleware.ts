@@ -11,6 +11,21 @@ export class AppError extends Error {
 export function handleError(error: any) {
   console.error('API Error details:', error);
 
+  // Handle Prisma initialization/connectivity failures first.
+  if (error?.name === 'PrismaClientInitializationError') {
+    const message = String(error?.message || '');
+    const maxConnReached = message.includes('EMAXCONNSESSION') || message.includes('max clients reached');
+
+    return NextResponse.json(
+      {
+        error: maxConnReached
+          ? 'Database connection limit reached. Please restart local server or reduce active connections and try again.'
+          : 'Database is temporarily unavailable. Please try again later.',
+      },
+      { status: 503 }
+    );
+  }
+
   if (error instanceof AppError) {
     return NextResponse.json(
       { error: error.message },

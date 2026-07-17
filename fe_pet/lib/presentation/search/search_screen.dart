@@ -25,7 +25,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    
+
     // Trigger initial search empty query
     Future.microtask(() {
       ref.read(searchProvider.notifier).executeSearch();
@@ -49,7 +49,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilterBottomSheet() {
     final searchState = ref.read(searchProvider);
     final categoriesAsync = ref.read(homeCategoriesProvider);
-    
+
     double? localMin = searchState.minPrice;
     double? localMax = searchState.maxPrice;
     int? localCategoryId = searchState.categoryId;
@@ -60,7 +60,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.cardRadius),
+        ),
       ),
       builder: (context) {
         return StatefulBuilder(
@@ -71,7 +73,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               expand: false,
               builder: (context, scrollController) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: AppSpacing.s),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.m,
+                    vertical: AppSpacing.s,
+                  ),
                   child: ListView(
                     controller: scrollController,
                     children: [
@@ -90,7 +95,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Bộ lọc & Sắp xếp', style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.bold)),
+                          Text(
+                            'Bộ lọc & Sắp xếp',
+                            style: AppTextStyles.h2.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           TextButton(
                             onPressed: () {
                               setModalState(() {
@@ -101,7 +111,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 localSortOrder = 'desc';
                               });
                             },
-                            child: const Text('Đặt lại', style: TextStyle(color: AppColors.primary)),
+                            child: const Text(
+                              'Đặt lại',
+                              style: TextStyle(color: AppColors.primary),
+                            ),
                           ),
                         ],
                       ),
@@ -109,7 +122,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(height: 8),
 
                       // Categories filter
-                      Text('Danh Mục', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Danh Mục',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       categoriesAsync.when(
                         data: (categories) {
@@ -120,21 +138,31 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               ChoiceChip(
                                 label: const Text('Tất cả'),
                                 selected: localCategoryId == null,
-                                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                                selectedColor: AppColors.primary.withValues(
+                                  alpha: 0.2,
+                                ),
                                 onSelected: (sel) {
-                                  if (sel) setModalState(() => localCategoryId = null);
+                                  if (sel) {
+                                    setModalState(() => localCategoryId = null);
+                                  }
                                 },
                               ),
-                              ...categories.map((cat) => ChoiceChip(
-                                    label: Text(cat.name),
-                                    selected: localCategoryId == cat.categoryId,
-                                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                                    onSelected: (sel) {
-                                      if (sel) {
-                                        setModalState(() => localCategoryId = cat.categoryId);
-                                      }
-                                    },
-                                  )),
+                              ...categories.map(
+                                (cat) => ChoiceChip(
+                                  label: Text(cat.name),
+                                  selected: localCategoryId == cat.categoryId,
+                                  selectedColor: AppColors.primary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  onSelected: (sel) {
+                                    if (sel) {
+                                      setModalState(
+                                        () => localCategoryId = cat.categoryId,
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
                             ],
                           );
                         },
@@ -144,7 +172,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(height: 16),
 
                       // Pricing Range Filter
-                      Text('Khoảng giá (\$)', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Khoảng giá (\$)',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -154,9 +187,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               decoration: const InputDecoration(
                                 hintText: 'Thấp nhất',
                                 border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
                               ),
-                              controller: TextEditingController(text: localMin?.toString() ?? ''),
+                              controller: TextEditingController(
+                                text: localMin?.toString() ?? '',
+                              ),
                               onChanged: (val) {
                                 localMin = double.tryParse(val);
                               },
@@ -169,9 +206,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               decoration: const InputDecoration(
                                 hintText: 'Cao nhất',
                                 border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
                               ),
-                              controller: TextEditingController(text: localMax?.toString() ?? ''),
+                              controller: TextEditingController(
+                                text: localMax?.toString() ?? '',
+                              ),
                               onChanged: (val) {
                                 localMax = double.tryParse(val);
                               },
@@ -182,7 +223,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(height: 16),
 
                       // Sorting Options
-                      Text('Sắp xếp theo', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Sắp xếp theo',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         initialValue: '$localSortBy-$localSortOrder',
@@ -191,10 +237,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           contentPadding: EdgeInsets.symmetric(horizontal: 12),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'createdAt-desc', child: Text('Mới nhất')),
-                          DropdownMenuItem(value: 'price-asc', child: Text('Giá: Thấp -> Cao')),
-                          DropdownMenuItem(value: 'price-desc', child: Text('Giá: Cao -> Thấp')),
-                          DropdownMenuItem(value: 'name-asc', child: Text('Tên: A -> Z')),
+                          DropdownMenuItem(
+                            value: 'createdAt-desc',
+                            child: Text('Mới nhất'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'price-asc',
+                            child: Text('Giá: Thấp -> Cao'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'price-desc',
+                            child: Text('Giá: Cao -> Thấp'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'name-asc',
+                            child: Text('Tên: A -> Z'),
+                          ),
                         ],
                         onChanged: (val) {
                           if (val != null) {
@@ -216,8 +274,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ),
                         ),
                         onPressed: () {
-                          ref.read(searchProvider.notifier).updateCategory(localCategoryId);
-                          ref.read(searchProvider.notifier).updateFilters(
+                          ref
+                              .read(searchProvider.notifier)
+                              .updateCategory(localCategoryId);
+                          ref
+                              .read(searchProvider.notifier)
+                              .updateFilters(
                                 minPrice: localMin,
                                 maxPrice: localMax,
                                 sortBy: localSortBy,
@@ -250,10 +312,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tìm kiếm sản phẩm'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Tìm kiếm sản phẩm'), centerTitle: true),
       body: Column(
         children: [
           // Search & Filter input bar
@@ -273,7 +332,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               icon: const Icon(Icons.clear_rounded),
                               onPressed: () {
                                 _searchController.clear();
-                                ref.read(searchProvider.notifier).updateQuery('');
+                                ref
+                                    .read(searchProvider.notifier)
+                                    .updateQuery('');
                               },
                             )
                           : null,
@@ -300,11 +361,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       color: isDark ? AppColors.surfaceDark : Colors.grey[100],
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDark ? AppColors.borderDark : Colors.grey[200]!,
+                        color: isDark
+                            ? AppColors.borderDark
+                            : Colors.grey[200]!,
                       ),
                     ),
                     child: Badge(
-                      isLabelVisible: searchState.categoryId != null ||
+                      isLabelVisible:
+                          searchState.categoryId != null ||
                           searchState.minPrice != null ||
                           searchState.maxPrice != null ||
                           searchState.sortBy != 'createdAt',
@@ -330,7 +394,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   Text(
                     'Đang áp dụng bộ lọc',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondary,
                     ),
                   ),
                   const Spacer(),
@@ -357,97 +423,109 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: searchState.isLoading
                 ? GridView.builder(
                     padding: const EdgeInsets.all(AppSpacing.m),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.72,
-                      crossAxisSpacing: AppSpacing.m,
-                      mainAxisSpacing: AppSpacing.m,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.64,
+                          crossAxisSpacing: AppSpacing.m,
+                          mainAxisSpacing: AppSpacing.m,
+                        ),
                     itemCount: 6,
                     itemBuilder: (context, index) => Shimmer.fromColors(
                       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                      highlightColor: isDark
+                          ? Colors.grey[700]!
+                          : Colors.grey[100]!,
                       child: Card(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.cardRadius,
+                          ),
                         ),
                         child: Container(),
                       ),
                     ),
                   )
                 : searchState.products.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.search_off_rounded,
-                                size: 72,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Không tìm thấy sản phẩm',
-                              style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Hãy thử thay đổi từ khoá hoặc bộ lọc.',
-                              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.search_off_rounded,
+                            size: 72,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      )
-                    : Column(
-                        children: [
-                          Expanded(
-                            child: GridView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(AppSpacing.m),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        const SizedBox(height: 16),
+                        Text(
+                          'Không tìm thấy sản phẩm',
+                          style: AppTextStyles.h3.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Hãy thử thay đổi từ khoá hoặc bộ lọc.',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        child: GridView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(AppSpacing.m),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                childAspectRatio: 0.62,
+                                childAspectRatio: 0.64,
                                 crossAxisSpacing: AppSpacing.m,
                                 mainAxisSpacing: AppSpacing.m,
                               ),
-                              itemCount: searchState.products.length,
-                              itemBuilder: (context, index) {
-                                final product = searchState.products[index];
-                                  return ProductCard(
-                                    product: product,
-                                    heroTagSuffix: 'search',
-                                    onTap: () => context.push(
-                                      '/product/${product.productId}?heroTag=product-img-${product.productId}search',
-                                      extra: product,
-                                    ),
-                                  );
-                              },
-                            ),
-                          ),
-                          // Loading more indicator
-                          if (searchState.isLoadMore)
-                            const Padding(
-                              padding: EdgeInsets.all(AppSpacing.s),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(AppColors.primary),
-                                  ),
+                          itemCount: searchState.products.length,
+                          itemBuilder: (context, index) {
+                            final product = searchState.products[index];
+                            return ProductCard(
+                              product: product,
+                              heroTagSuffix: 'search',
+                              onTap: () => context.push(
+                                '/product/${product.productId}?heroTag=product-img-${product.productId}search',
+                                extra: product,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // Loading more indicator
+                      if (searchState.isLoadMore)
+                        const Padding(
+                          padding: EdgeInsets.all(AppSpacing.s),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  AppColors.primary,
                                 ),
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                        ),
+                    ],
+                  ),
           ),
         ],
       ),

@@ -25,7 +25,6 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
-
   String _formatCurrency(double value) {
     final raw = value.toStringAsFixed(0);
     final chars = raw.split('');
@@ -54,7 +53,7 @@ class _ProductCardState extends State<ProductCard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -67,13 +66,14 @@ class _ProductCardState extends State<ProductCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product Image (Deterministic aspect ratio for Masonry grid compatibility)
+              // Tuned ratio for Pixel 7 and 2-column grids to avoid vertical overflow.
               AspectRatio(
-                aspectRatio: 1.0,
+                aspectRatio: 1.12,
                 child: Stack(
                   children: [
                     Hero(
-                      tag: 'product-img-${widget.product.productId}${widget.heroTagSuffix ?? ''}',
+                      tag:
+                          'product-img-${widget.product.productId}${widget.heroTagSuffix ?? ''}',
                       child: Container(
                         width: double.infinity,
                         height: double.infinity,
@@ -116,12 +116,12 @@ class _ProductCardState extends State<ProductCard> {
                     // Discount Badge
                     if (hasDiscount)
                       Positioned(
-                        top: 10,
-                        left: 10,
+                        top: 8,
+                        left: 8,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 7,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.error,
@@ -140,18 +140,22 @@ class _ProductCardState extends State<ProductCard> {
 
                     // Favorite Button
                     Positioned(
-                      top: 6,
-                      right: 6,
+                      top: 5,
+                      right: 5,
                       child: Consumer<WishlistProvider>(
                         builder: (context, wishlistProvider, child) {
-                          final isFav = wishlistProvider.isWishlisted(widget.product.productId);
+                          final isFav = wishlistProvider.isWishlisted(
+                            widget.product.productId,
+                          );
                           return CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.white.withOpacity(0.9),
+                            radius: 14,
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.9,
+                            ),
                             child: WishlistHeartButton(
                               product: widget.product,
                               isWishlisted: isFav,
-                              iconSize: 16,
+                              iconSize: 14,
                               onTap: () async {
                                 try {
                                   await wishlistProvider.toggle(widget.product);
@@ -159,7 +163,9 @@ class _ProductCardState extends State<ProductCard> {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Không thể cập nhật danh sách yêu thích.'),
+                                        content: Text(
+                                          'Không thể cập nhật danh sách yêu thích.',
+                                        ),
                                         backgroundColor: Colors.red,
                                         duration: Duration(seconds: 2),
                                       ),
@@ -179,8 +185,8 @@ class _ProductCardState extends State<ProductCard> {
               // Product Info (Laid out naturally to support unbounded parent constraints)
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 10,
+                  vertical: 6,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +196,7 @@ class _ProductCardState extends State<ProductCard> {
                       widget.product.category?.name ?? 'PETS',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -204,29 +210,29 @@ class _ProductCardState extends State<ProductCard> {
                             ? AppColors.textPrimaryDark
                             : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        height: 1.25,
+                        fontSize: 12,
+                        height: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 6),
- 
+                    const SizedBox(height: 4),
+
                     // Rating & Sales Row
                     Row(
                       children: [
                         const Icon(
                           Icons.star_rounded,
                           color: Colors.amber,
-                          size: 14,
+                          size: 13,
                         ),
                         const SizedBox(width: 2),
                         Text(
                           '4.8',
                           style: AppTextStyles.bodySmall.copyWith(
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             'Đã bán ${(widget.product.productId * 19) % 150 + 12}',
@@ -234,14 +240,14 @@ class _ProductCardState extends State<ProductCard> {
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
-                              fontSize: 10,
+                              fontSize: 9.5,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
- 
+                    const SizedBox(height: 6),
+
                     // Pricing & Buy button Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -256,7 +262,7 @@ class _ProductCardState extends State<ProductCard> {
                                   _formatCurrency(oldPrice),
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.textSecondary,
-                                    fontSize: 10,
+                                    fontSize: 9,
                                     decoration: TextDecoration.lineThrough,
                                   ),
                                 ),
@@ -265,7 +271,7 @@ class _ProductCardState extends State<ProductCard> {
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
@@ -273,14 +279,14 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                         // Small Cart Action Circle
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(5),
                           decoration: const BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.add_rounded,
-                            size: 14,
+                            size: 13,
                             color: Colors.white,
                           ),
                         ),
