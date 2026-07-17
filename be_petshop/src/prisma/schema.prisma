@@ -17,6 +17,9 @@ model User {
   Avatar       String?
   Role         String         @default("CUSTOMER") // CUSTOMER, ADMIN
   fcmToken     String?        // Token để gửi thông báo qua Firebase Cloud Messaging
+  gender       String?
+  birthday     DateTime?
+  bio          String?
   CreatedAt    DateTime       @default(now())
   UpdatedAt    DateTime       @updatedAt
   CartItems    CartItem[]
@@ -141,7 +144,11 @@ model Message {
   message        String
   createdAt      DateTime     @default(now())
   isRead         Boolean      @default(false)
+  status         String       @default("SENT") // "SENT", "DELIVERED", "READ"
   messageType    String       @default("TEXT") // TEXT, IMAGE, SYSTEM, FILE
+  sentAt         DateTime     @default(now())
+  deliveredAt    DateTime?
+  readAt         DateTime?
 
   Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }

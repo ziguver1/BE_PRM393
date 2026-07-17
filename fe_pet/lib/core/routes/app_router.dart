@@ -12,6 +12,7 @@ import '../../presentation/search/search_screen.dart';
 import '../../presentation/favorite/favorites_screen.dart';
 import '../../presentation/cart/cart_screen.dart';
 import '../../presentation/profile/profile_screen.dart';
+import '../../presentation/profile/edit_profile_screen.dart';
 import '../../presentation/profile/address_book_screen.dart';
 import '../../presentation/profile/change_password_screen.dart';
 import '../../presentation/category/category_detail_screen.dart';
@@ -171,6 +172,10 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
           final initialTab = tabStr != null ? int.tryParse(tabStr) ?? 0 : 0;
           return OrderHistoryScreen(initialTab: initialTab);
         },
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
         path: '/profile/addresses',

@@ -109,6 +109,13 @@ class AuthNotifier extends Notifier<AuthState> {
       state = AuthState.unauthenticated();
     }
   }
+
+  void updateSessionUser(User updatedUser) {
+    if (state.status == AuthStatus.authenticated) {
+      state = AuthState.authenticated(updatedUser);
+      _repository.saveUser(updatedUser);
+    }
+  }
 }
 
 final authNotifierProvider = NotifierProvider<AuthNotifier, AuthState>(() {

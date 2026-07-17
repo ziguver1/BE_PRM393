@@ -147,6 +147,10 @@ export interface Message {
   SenderId: number;
   Content: string;
   CreatedAt: string;
+  status?: 'SENT' | 'DELIVERED' | 'READ';
+  sentAt?: string;
+  deliveredAt?: string | null;
+  readAt?: string | null;
   Sender?: {
     UserId: number;
     FullName: string;
@@ -160,6 +164,10 @@ export interface ChatRoom {
   ChatRoomId: number;
   UserId: number;
   CreatedAt: string;
+  unreadAdmin?: number;
+  unreadCustomer?: number;
+  lastMessage?: string;
+  lastMessageAt?: string;
   User?: {
     UserId: number;
     FullName: string;

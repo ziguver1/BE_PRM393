@@ -20,6 +20,8 @@ export class ChatController {
         UpdatedAt: r.updatedAt,
         unreadAdmin: r.unreadAdmin,
         unreadCustomer: r.unreadCustomer,
+        lastMessage: r.lastMessage,
+        lastMessageAt: r.lastMessageAt,
         User: r.User,
         Messages: r.Messages ? r.Messages.map((m: any) => ({
           MessageId: m.id,
@@ -27,6 +29,10 @@ export class ChatController {
           SenderId: m.senderId,
           Content: m.message,
           CreatedAt: m.createdAt,
+          status: m.readAt ? 'READ' : (m.deliveredAt ? 'DELIVERED' : 'SENT'),
+          sentAt: m.sentAt,
+          deliveredAt: m.deliveredAt,
+          readAt: m.readAt,
         })) : [],
       }));
       return NextResponse.json(formatted, { status: 200 });
@@ -70,6 +76,10 @@ export class ChatController {
         CreatedAt: m.createdAt,
         senderType: m.senderType,
         isRead: m.isRead,
+        status: m.readAt ? 'READ' : (m.deliveredAt ? 'DELIVERED' : 'SENT'),
+        sentAt: m.sentAt,
+        deliveredAt: m.deliveredAt,
+        readAt: m.readAt,
         messageType: m.messageType,
       }));
       return NextResponse.json(formatted, { status: 200 });
@@ -101,6 +111,10 @@ export class ChatController {
         CreatedAt: message.createdAt,
         senderType: message.senderType,
         isRead: message.isRead,
+        status: message.readAt ? 'READ' : (message.deliveredAt ? 'DELIVERED' : 'SENT'),
+        sentAt: message.sentAt,
+        deliveredAt: message.deliveredAt,
+        readAt: message.readAt,
         messageType: message.messageType,
       };
 

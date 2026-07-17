@@ -1,129 +1,149 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/network/api_client.dart';
 import '../auth/providers/auth_provider.dart';
+import './providers/profile_provider.dart';
+import '../../domain/entities/user.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authNotifierProvider);
-    final user = authState.user;
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  int? _pendingCount;
+  int? _shippingCount;
+  int? _receivedCount;
+  int? _cancelledCount;
+  bool _isLoadingCounts = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrderCounts();
+  }
+
+  Future<void> _fetchOrderCounts() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingCounts = true;
+    });
+
+    try {
+      final response = await ApiClient().dio.get('/orders');
+      if (response.statusCode == 200 && response.data is List) {
+        final List<dynamic> orders = response.data;
+        int pending = 0;
+        int shipping = 0;
+        int received = 0;
+        int cancelled = 0;
+
+        for (var o in orders) {
+          final status = (o['Status']?.toString() ?? '').toUpperCase();
+          if (status == 'PENDING') {
+            pending++;
+          } else if (status == 'PAID' || status == 'SHIPPING' || status == 'DELIVERED') {
+            shipping++;
+          } else if (status == 'RECEIVED') {
+            received++;
+          } else if (status == 'CANCELLED') {
+            cancelled++;
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _pendingCount = pending;
+            _shippingCount = shipping;
+            _receivedCount = received;
+            _cancelledCount = cancelled;
+            _isLoadingCounts = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoadingCounts = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching order counts: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingCounts = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileState = ref.watch(profileNotifierProvider);
+    final user = profileState.user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : const Color(0xFFF5F5F5),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // 1. Premium Orange Gradient Header
-            _buildPremiumHeader(context, user, isDark),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _fetchOrderCounts();
+          ref.read(profileNotifierProvider.notifier).refresh();
+        },
+        color: AppColors.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // 1. Premium Streamlined Orange Gradient Header
+              _buildPremiumHeader(context, user, isDark),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
 
-                  // 2. Shopee-like "Đơn hàng của tôi" Card
-                  _buildMyOrdersCard(context, isDark),
+                    // 2. Order Summary Card
+                    _buildMyOrdersCard(context, isDark),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                  // 3. Settings Menu Card
-                  Material(
-                    color: isDark ? AppColors.surfaceDark : Colors.white,
-                    clipBehavior: Clip.antiAlias,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isDark ? AppColors.borderDark : Colors.grey[200]!,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildMenuItem(
-                          icon: Icons.location_on_outlined,
-                          title: 'Sổ địa chỉ',
-                          subtitle: 'Quản lý các địa chỉ nhận hàng của bạn',
-                          onTap: () => context.push('/profile/addresses'),
-                          isDark: isDark,
-                        ),
-                        _buildDivider(isDark),
-                        _buildMenuItem(
-                          icon: Icons.lock_outline_rounded,
-                          title: 'Đổi mật khẩu',
-                          subtitle: 'Cập nhật lại mật khẩu tài khoản',
-                          onTap: () => context.push('/profile/change-password'),
-                          isDark: isDark,
-                        ),
-                        _buildDivider(isDark),
-                        _buildMenuItem(
-                          icon: Icons.support_agent_rounded,
-                          title: 'Hỗ trợ khách hàng',
-                          subtitle: 'Trò chuyện hỗ trợ trực tuyến 24/7',
-                          onTap: () => context.push('/chat'),
-                          isDark: isDark,
-                        ),
-                        _buildDivider(isDark),
-                        _buildMenuItem(
-                          icon: Icons.logout_rounded,
-                          title: 'Đăng xuất',
-                          subtitle: 'Thoát khỏi phiên làm việc hiện tại',
-                          onTap: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                title: const Text('Xác nhận đăng xuất'),
-                                content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
-                                    style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                                    child: const Text('Đăng xuất'),
-                                  ),
-                                ],
-                              ),
-                            );
+                    // 3. Edit Profile Action Card
+                    _buildEditProfileCard(context, isDark),
 
-                            if (confirm == true && context.mounted) {
-                              await ref.read(authNotifierProvider.notifier).logout();
-                              if (context.mounted) {
-                                context.go('/login');
-                              }
-                            }
-                          },
-                          isDark: isDark,
-                          isDestructive: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    const SizedBox(height: 16),
+
+                    // 4. Customer Support Action Card
+                    _buildCustomerSupportCard(context, user, isDark),
+
+                    const SizedBox(height: 16),
+
+                    // 5. Logout Section
+                    _buildLogoutCard(context, isDark),
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPremiumHeader(BuildContext context, dynamic user, bool isDark) {
+  Widget _buildPremiumHeader(BuildContext context, User? user, bool isDark) {
     final String fullName = user?.fullName ?? 'Khách hàng';
     final String initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
     final String email = user?.email ?? 'Chưa đăng nhập';
-    final bool isAdmin = user?.role == 'ADMIN';
-    final String memberGrade = isAdmin ? 'Thành viên Kim cương' : 'Thành viên Bạc';
+    final String? phone = user?.phone;
+    final String? avatar = user?.avatar;
 
     return Container(
       width: double.infinity,
@@ -132,56 +152,74 @@ class ProfileScreen extends ConsumerWidget {
           colors: isDark
               ? [AppColors.surfaceDark, AppColors.backgroundDark]
               : [Colors.orange.shade800, Colors.orange.shade500],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-            blurRadius: 15,
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 64, bottom: 32),
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 60, bottom: 24),
       child: Row(
         children: [
-          // Premium Avatar
           Container(
-            width: 76,
-            height: 76,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(color: Colors.white.withOpacity(0.9), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 6,
                 ),
               ],
             ),
-            child: Center(
-              child: Text(
-                initial,
-                style: TextStyle(
-                  color: Colors.orange.shade800,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 32,
-                ),
-              ),
+            child: ClipOval(
+              child: avatar != null && avatar.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: avatar,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Text(
+                          initial,
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 26,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                        ),
+                      ),
+                    ),
             ),
           ),
-          const SizedBox(width: 20),
-
-          // User details & Badges
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   fullName,
@@ -190,7 +228,7 @@ class ProfileScreen extends ConsumerWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 18,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -200,38 +238,21 @@ class ProfileScreen extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.85),
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 8),
-
-                // Member Grade Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                if (phone != null && phone.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    phone,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 12,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.military_tech_rounded,
-                        color: Colors.amberAccent,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        memberGrade,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ],
             ),
           ),
@@ -240,10 +261,145 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildEditProfileCard(BuildContext context, bool isDark) {
+    return PressableCard(
+      onTap: () => context.push('/profile/edit'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.orange.shade800.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                color: Colors.orange.shade800,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chỉnh sửa thông tin',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Cập nhật họ tên, ngày sinh, số điện thoại...',
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? Colors.grey[700] : Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerSupportCard(BuildContext context, User? user, bool isDark) {
+    final unreadCount = user?.unreadSupportMessages ?? 0;
+
+    return PressableCard(
+      onTap: () => context.push('/chat'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.orange.shade800.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: Colors.orange.shade800,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Hỗ trợ khách hàng',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Trò chuyện hỗ trợ 24/7',
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            if (unreadCount > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: const BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? Colors.grey[700] : Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMyOrdersCard(BuildContext context, bool isDark) {
-    return Card(
-      elevation: 0.5,
+    return Material(
       color: isDark ? AppColors.surfaceDark : Colors.white,
+      elevation: 0.5,
+      shadowColor: Colors.black.withOpacity(0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
@@ -254,7 +410,6 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            // Card Title Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -272,7 +427,7 @@ class ProfileScreen extends ConsumerWidget {
                     child: const Row(
                       children: [
                         Text(
-                          'Xem lịch sử mua hàng',
+                          'Xem lịch sử',
                           style: TextStyle(color: Colors.grey, fontSize: 11),
                         ),
                         SizedBox(width: 4),
@@ -285,9 +440,8 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Divider(color: isDark ? AppColors.borderDark : Colors.grey[100]!, height: 1),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Horizontal Status Icon Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -296,24 +450,28 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.payment_rounded,
                   label: 'Chờ thanh toán',
                   tabIndex: 1,
+                  count: _pendingCount,
                 ),
                 _buildOrderStatusItem(
                   context,
                   icon: Icons.local_shipping_outlined,
                   label: 'Đang giao',
                   tabIndex: 2,
+                  count: _shippingCount,
                 ),
                 _buildOrderStatusItem(
                   context,
                   icon: Icons.done_all_rounded,
                   label: 'Đã nhận',
                   tabIndex: 3,
+                  count: _receivedCount,
                 ),
                 _buildOrderStatusItem(
                   context,
                   icon: Icons.cancel_outlined,
                   label: 'Đã hủy',
                   tabIndex: 4,
+                  count: _cancelledCount,
                 ),
               ],
             ),
@@ -328,88 +486,214 @@ class ProfileScreen extends ConsumerWidget {
     required IconData icon,
     required String label,
     required int tabIndex,
+    required int? count,
   }) {
     return InkWell(
       onTap: () => context.push('/orders?tab=$tabIndex'),
       borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: 80,
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: Colors.orange.shade800,
-              size: 26,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: SizedBox(
+          width: 80,
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    color: Colors.orange.shade800,
+                    size: 26,
+                  ),
+                  _buildCountBadge(count),
+                ],
               ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCountBadge(int? count) {
+    if (_isLoadingCounts || count == null || count <= 0) return const SizedBox.shrink();
+    return Positioned(
+      top: -4,
+      right: -8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        decoration: const BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+        ),
+        constraints: const BoxConstraints(
+          minWidth: 16,
+          minHeight: 16,
+        ),
+        child: Text(
+          '$count',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutCard(BuildContext context, bool isDark) {
+    return PressableCard(
+      onTap: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text('Xác nhận đăng xuất'),
+            content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                child: const Text('Đăng xuất'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true && context.mounted) {
+          await ref.read(authNotifierProvider.notifier).logout();
+          if (context.mounted) {
+            context.go('/login');
+          }
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: AppColors.error,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Đăng xuất',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppColors.error,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Đăng xuất khỏi tài khoản của bạn',
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? Colors.grey[700] : Colors.grey[400],
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    required bool isDark,
-    bool isDestructive = false,
-  }) {
-    final titleColor = isDestructive
-        ? AppColors.error
-        : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary);
-    final iconColor = isDestructive ? AppColors.error : AppColors.primary;
+class PressableCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final Color? color;
+  final double borderRadius;
+  final double elevation;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      onTap: onTap,
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: (isDestructive ? AppColors.error : AppColors.primary).withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          color: iconColor,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-          color: titleColor,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: Colors.grey, fontSize: 12),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: isDark ? Colors.grey[700] : Colors.grey[400],
-      ),
-    );
+  const PressableCard({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.color,
+    this.borderRadius = 20.0,
+    this.elevation = 0.5,
+  });
+
+  @override
+  State<PressableCard> createState() => _PressableCardState();
+}
+
+class _PressableCardState extends State<PressableCard> {
+  double _scale = 1.0;
+
+  void _onTapDown(TapDownDetails details) {
+    setState(() => _scale = 0.96);
   }
 
-  Widget _buildDivider(bool isDark) {
-    return Divider(
-      height: 1,
-      indent: 20,
-      endIndent: 20,
-      color: isDark ? AppColors.borderDark : Colors.grey[200]!,
+  void _onTapUp(TapUpDetails details) {
+    setState(() => _scale = 1.0);
+    widget.onTap();
+  }
+
+  void _onTapCancel() {
+    setState(() => _scale = 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeInOut,
+        child: Material(
+          color: widget.color ?? (isDark ? AppColors.surfaceDark : Colors.white),
+          elevation: widget.elevation,
+          shadowColor: Colors.black.withOpacity(0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            side: BorderSide(
+              color: isDark ? AppColors.borderDark : Colors.grey[200]!,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: widget.child,
+        ),
+      ),
     );
   }
 }

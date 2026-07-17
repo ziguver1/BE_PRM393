@@ -93,38 +93,122 @@ chatNamespace.use((socket, next) => {
 });
 
 chatNamespace.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}, User ID: ${socket.user.userId}, Role: ${socket.user.role}`);
+  const userId = socket.user.userId;
+  const role = socket.user.role;
+  console.log(`Socket connected: ${socket.id}, User ID: ${userId}, Role: ${role}`);
 
+  // 1. Connection Delivery Markers: Update pending messages
+  const now = new Date();
+  if (role === 'ADMIN') {
+    // Admin came online: Mark all pending Customer messages as DELIVERED
+    (async () => {
+      try {
+        const sentMessages = await prisma.message.findMany({
+          where: { senderType: 'Customer', status: 'SENT', deliveredAt: null },
+          select: { conversationId: true }
+        });
+        if (sentMessages.length > 0) {
+          await prisma.message.updateMany({
+            where: { senderType: 'Customer', status: 'SENT', deliveredAt: null },
+            data: { status: 'DELIVERED', deliveredAt: now }
+          });
+          const convIds = [...new Set(sentMessages.map(m => m.conversationId))];
+          for (const cId of convIds) {
+            chatNamespace.to(`conversation_${cId}`).emit('message_delivered', {
+              conversationId: cId,
+              senderType: 'Customer',
+              deliveredAt: now
+            });
+            chatNamespace.emit('conversations_updated', { conversationId: cId });
+          }
+        }
+      } catch (err) {
+        console.error('Error updating deliveries on admin connect:', err);
+      }
+    })();
+  } else {
+    // Customer came online: Mark all pending Admin messages in their conversation as DELIVERED
+    (async () => {
+      try {
+        const conv = await prisma.conversation.findUnique({
+          where: { userId }
+        });
+        if (conv) {
+          const sentCount = await prisma.message.count({
+            where: { conversationId: conv.id, senderType: 'Admin', status: 'SENT', deliveredAt: null }
+          });
+          if (sentCount > 0) {
+            await prisma.message.updateMany({
+              where: { conversationId: conv.id, senderType: 'Admin', status: 'SENT', deliveredAt: null },
+              data: { status: 'DELIVERED', deliveredAt: now }
+            });
+            chatNamespace.to(`conversation_${conv.id}`).emit('message_delivered', {
+              conversationId: conv.id,
+              senderType: 'Admin',
+              deliveredAt: now
+            });
+            chatNamespace.emit('conversations_updated', { conversationId: conv.id });
+          }
+        }
+      } catch (err) {
+        console.error('Error updating deliveries on customer connect:', err);
+      }
+    })();
+  }
+
+  // 2. Room join (Subscribe to Room - DOES NOT mark as read)
   socket.on('join', async (conversationId) => {
     try {
       const convId = Number(conversationId);
       if (isNaN(convId)) return;
 
       // Customer can only join their own conversation
-      if (socket.user.role !== 'ADMIN') {
+      if (role !== 'ADMIN') {
         const conv = await prisma.conversation.findUnique({
           where: { id: convId }
         });
-        if (!conv || conv.userId !== socket.user.userId) {
-          console.warn(`Unauthorized join from user ${socket.user.userId} for room ${convId}`);
+        if (!conv || conv.userId !== userId) {
+          console.warn(`Unauthorized join from user ${userId} for room ${convId}`);
           return;
         }
       }
 
       const roomName = `conversation_${convId}`;
       socket.join(roomName);
-      console.log(`User ${socket.user.userId} successfully joined room: ${roomName}`);
+      console.log(`User ${userId} successfully joined room: ${roomName}`);
+    } catch (e) {
+      console.error('Error during room join setup:', e);
+    }
+  });
 
-      // Clear unread badge for reader
-      if (socket.user.role === 'ADMIN') {
+  // 2b. Explicit conversation opened trigger -> Read receipts
+  socket.on('conversation_opened', async (data) => {
+    try {
+      const { conversationId } = data;
+      const convId = Number(conversationId);
+      if (isNaN(convId)) return;
+
+      if (role !== 'ADMIN') {
+        const conv = await prisma.conversation.findUnique({
+          where: { id: convId }
+        });
+        if (!conv || conv.userId !== userId) return;
+      }
+
+      const roomName = `conversation_${convId}`;
+      const nowTime = new Date();
+
+      if (role === 'ADMIN') {
         await prisma.conversation.update({
           where: { id: convId },
           data: { unreadAdmin: 0 }
         });
         await prisma.message.updateMany({
-          where: { conversationId: convId, senderType: 'Customer', isRead: false },
-          data: { isRead: true }
+          where: { conversationId: convId, senderType: 'Customer', readAt: null },
+          data: { isRead: true, status: 'READ', readAt: nowTime }
         });
+        // Notify customer that Admin read their messages
+        chatNamespace.to(roomName).emit('message_read', { conversationId: convId, senderType: 'Customer', readAt: nowTime });
         // Notify admin panel list that count is cleared
         chatNamespace.emit('conversations_updated', { conversationId: convId, unreadAdmin: 0 });
       } else {
@@ -133,42 +217,116 @@ chatNamespace.on('connection', (socket) => {
           data: { unreadCustomer: 0 }
         });
         await prisma.message.updateMany({
-          where: { conversationId: convId, senderType: 'Admin', isRead: false },
-          data: { isRead: true }
+          where: { conversationId: convId, senderType: 'Admin', readAt: null },
+          data: { isRead: true, status: 'READ', readAt: nowTime }
         });
+        // Notify admin that Customer read their messages
+        chatNamespace.to(roomName).emit('message_read', { conversationId: convId, senderType: 'Admin', readAt: nowTime });
+        // Notify list
+        chatNamespace.emit('conversations_updated', { conversationId: convId, unreadCustomer: 0 });
       }
-    } catch (e) {
-      console.error('Error during room join setup:', e);
+      console.log(`conversation_opened: User ${userId} (${role}) marked messages as READ in room ${convId}`);
+    } catch (err) {
+      console.error('Error in conversation_opened handler:', err);
     }
   });
 
+  // 2c. Message delivery acknowledgement from client
+  socket.on('message_delivered_ack', async (data) => {
+    try {
+      const { messageId } = data;
+      const msgId = Number(messageId);
+      if (isNaN(msgId)) return;
+
+      const message = await prisma.message.findUnique({
+        where: { id: msgId }
+      });
+      if (!message || message.deliveredAt) return; // Already delivered or doesn't exist
+
+      const nowTime = new Date();
+      const updatedMsg = await prisma.message.update({
+        where: { id: msgId },
+        data: {
+          deliveredAt: nowTime,
+          status: message.status === 'READ' ? 'READ' : 'DELIVERED'
+        }
+      });
+
+      const roomName = `conversation_${message.conversationId}`;
+      chatNamespace.to(roomName).emit('message_delivered', {
+        messageId: msgId,
+        conversationId: message.conversationId,
+        senderType: message.senderType,
+        deliveredAt: nowTime
+      });
+
+      chatNamespace.emit('conversations_updated', { conversationId: message.conversationId });
+      console.log(`Acknowledged delivery for message ID: ${msgId}`);
+    } catch (err) {
+      console.error('Error in message_delivered_ack:', err);
+    }
+  });
+
+  // 3. Customer Send Message
   socket.on('customer_send_message', async (data) => {
     try {
-      const { conversationId, message } = data;
+      const { conversationId, message, clientTempId } = data;
       const convId = Number(conversationId);
       if (!message || isNaN(convId)) return;
 
       const conv = await prisma.conversation.findUnique({
         where: { id: convId }
       });
-      if (!conv || conv.userId !== socket.user.userId) return;
+      if (!conv || conv.userId !== userId) return;
+
+      // Determine initial status based on recipient state
+      const roomName = `conversation_${convId}`;
+      const socketsInRoom = await chatNamespace.in(roomName).fetchSockets();
+      const isAdminInRoom = socketsInRoom.some(s => s.user && s.user.role === 'ADMIN');
+
+      let status = 'SENT';
+      let isRead = false;
+      let readAt = null;
+      let deliveredAt = null;
+
+      if (isAdminInRoom) {
+        status = 'READ';
+        isRead = true;
+        readAt = new Date();
+        deliveredAt = new Date();
+      } else {
+        const allSockets = Array.from(chatNamespace.sockets.values());
+        const isAdminOnline = allSockets.some(s => s.user && s.user.role === 'ADMIN');
+        if (isAdminOnline) {
+          status = 'DELIVERED';
+          deliveredAt = new Date();
+        }
+      }
 
       const msg = await prisma.message.create({
         data: {
           conversationId: convId,
           senderType: 'Customer',
-          senderId: socket.user.userId,
+          senderId: userId,
           message: message,
+          status: status,
+          isRead: isRead,
+          deliveredAt: deliveredAt,
+          readAt: readAt
         }
       });
 
+      const updateData = {
+        lastMessage: message,
+        lastMessageAt: new Date(),
+      };
+      if (status !== 'READ') {
+        updateData.unreadAdmin = { increment: 1 };
+      }
+
       const updatedConv = await prisma.conversation.update({
         where: { id: convId },
-        data: {
-          lastMessage: message,
-          lastMessageAt: new Date(),
-          unreadAdmin: { increment: 1 }
-        }
+        data: updateData
       });
 
       const responseData = {
@@ -179,11 +337,15 @@ chatNamespace.on('connection', (socket) => {
         CreatedAt: msg.createdAt,
         senderType: msg.senderType,
         isRead: msg.isRead,
+        status: msg.status,
+        sentAt: msg.sentAt,
+        deliveredAt: msg.deliveredAt,
+        readAt: msg.readAt,
+        clientTempId: clientTempId
       };
 
-      chatNamespace.to(`conversation_${convId}`).emit('new_message', responseData);
+      chatNamespace.to(roomName).emit('new_message', responseData);
       
-      // Notify all admins of updated unread badge in list
       chatNamespace.emit('conversations_updated', {
         conversationId: convId,
         unreadAdmin: updatedConv.unreadAdmin,
@@ -196,33 +358,69 @@ chatNamespace.on('connection', (socket) => {
     }
   });
 
+  // 4. Admin Send Message
   socket.on('admin_send_message', async (data) => {
     try {
-      const { conversationId, message } = data;
+      const { conversationId, message, clientTempId } = data;
       const convId = Number(conversationId);
-      if (!message || isNaN(convId) || socket.user.role !== 'ADMIN') return;
+      if (!message || isNaN(convId) || role !== 'ADMIN') return;
 
       const conv = await prisma.conversation.findUnique({
         where: { id: convId }
       });
       if (!conv) return;
 
+      const roomName = `conversation_${convId}`;
+      const socketsInRoom = await chatNamespace.in(roomName).fetchSockets();
+      const isCustomerInRoom = socketsInRoom.some(
+        s => s.user && s.user.role !== 'ADMIN' && s.user.userId === conv.userId
+      );
+
+      let status = 'SENT';
+      let isRead = false;
+      let readAt = null;
+      let deliveredAt = null;
+
+      if (isCustomerInRoom) {
+        status = 'READ';
+        isRead = true;
+        readAt = new Date();
+        deliveredAt = new Date();
+      } else {
+        const allSockets = Array.from(chatNamespace.sockets.values());
+        const isCustomerOnline = allSockets.some(
+          s => s.user && s.user.role !== 'ADMIN' && s.user.userId === conv.userId
+        );
+        if (isCustomerOnline) {
+          status = 'DELIVERED';
+          deliveredAt = new Date();
+        }
+      }
+
       const msg = await prisma.message.create({
         data: {
           conversationId: convId,
           senderType: 'Admin',
-          senderId: socket.user.userId,
+          senderId: userId,
           message: message,
+          status: status,
+          isRead: isRead,
+          deliveredAt: deliveredAt,
+          readAt: readAt
         }
       });
 
+      const updateData = {
+        lastMessage: message,
+        lastMessageAt: new Date(),
+      };
+      if (status !== 'READ') {
+        updateData.unreadCustomer = { increment: 1 };
+      }
+
       const updatedConv = await prisma.conversation.update({
         where: { id: convId },
-        data: {
-          lastMessage: message,
-          lastMessageAt: new Date(),
-          unreadCustomer: { increment: 1 }
-        }
+        data: updateData
       });
 
       const responseData = {
@@ -233,13 +431,18 @@ chatNamespace.on('connection', (socket) => {
         CreatedAt: msg.createdAt,
         senderType: msg.senderType,
         isRead: msg.isRead,
+        status: msg.status,
+        sentAt: msg.sentAt,
+        deliveredAt: msg.deliveredAt,
+        readAt: msg.readAt,
+        clientTempId: clientTempId
       };
 
-      chatNamespace.to(`conversation_${convId}`).emit('new_message', responseData);
+      chatNamespace.to(roomName).emit('new_message', responseData);
 
       chatNamespace.emit('conversations_updated', {
         conversationId: convId,
-        unreadAdmin: 0,
+        unreadCustomer: updatedConv.unreadCustomer,
         lastMessage: message,
         lastMessageAt: updatedConv.lastMessageAt,
       });
@@ -272,6 +475,10 @@ app.post('/internal/emit', async (req, res) => {
     CreatedAt: data.createdAt,
     senderType: data.senderType,
     isRead: data.isRead,
+    status: data.readAt ? 'READ' : (data.deliveredAt ? 'DELIVERED' : 'SENT'),
+    sentAt: data.sentAt || data.createdAt,
+    deliveredAt: data.deliveredAt,
+    readAt: data.readAt
   };
 
   chatNamespace.to(room).emit(event, responseData);

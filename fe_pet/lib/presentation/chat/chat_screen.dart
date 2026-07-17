@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/support_chat_provider.dart';
-import '../auth/providers/auth_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -255,11 +254,34 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     if (isMe) ...[
                       const SizedBox(width: 4),
-                      Icon(
-                        msg.isRead ? Icons.done_all_rounded : Icons.done_rounded,
-                        size: 12,
-                        color: Colors.white70,
-                      ),
+                      Builder(builder: (context) {
+                        if (msg.status == 'SENDING') {
+                          return const Icon(
+                            Icons.access_time_rounded,
+                            size: 11,
+                            color: Colors.white70,
+                          );
+                        } else if (msg.status == 'SENT') {
+                          return const Icon(
+                            Icons.done_rounded,
+                            size: 12,
+                            color: Colors.white70,
+                          );
+                        } else if (msg.status == 'DELIVERED') {
+                          return const Icon(
+                            Icons.done_all_rounded,
+                            size: 12,
+                            color: Colors.white70,
+                          );
+                        } else if (msg.status == 'READ') {
+                          return const Icon(
+                            Icons.done_all_rounded,
+                            size: 12,
+                            color: Colors.greenAccent,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
                     ],
                   ],
                 ),

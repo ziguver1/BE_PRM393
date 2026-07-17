@@ -44,9 +44,10 @@ export function ChatPage() {
       queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
     });
 
-    // Join room via socket
+    // Join room and mark conversation opened via socket
     if (socketRef.current) {
       socketRef.current.emit('join', selectedRoom.ChatRoomId);
+      socketRef.current.emit('conversation_opened', { conversationId: selectedRoom.ChatRoomId });
     }
   }, [selectedRoom, queryClient]);
 
@@ -74,6 +75,7 @@ export function ChatPage() {
         SenderId: msg.SenderId,
         Content: msg.Content,
         CreatedAt: msg.CreatedAt,
+        status: msg.status,
         Sender: (admin && msg.SenderId === admin.id) ? {
           UserId: admin.id,
           FullName: admin.name || 'Admin',
@@ -87,6 +89,7 @@ export function ChatPage() {
 
       if (isFromCustomer) {
         new Audio(NOTIFICATION_SOUND).play().catch(() => {});
+        socket.emit('message_delivered_ack', { messageId: msg.MessageId });
       }
 
       setLiveMessages((prev) => {
@@ -101,12 +104,42 @@ export function ChatPage() {
       queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
     });
 
+    socket.on('message_read', (data: any) => {
+      if (data.senderType === 'Admin') {
+        setLiveMessages((prev) =>
+          prev.map((m) =>
+            admin && m.SenderId === admin.id ? { ...m, status: 'READ' } : m
+          )
+        );
+      }
+    });
+
+    socket.on('message_delivered', (data: any) => {
+      if (data.senderType === 'Admin') {
+        setLiveMessages((prev) =>
+          prev.map((m) => {
+            if (data.messageId) {
+              return m.MessageId === data.messageId ? { ...m, status: 'DELIVERED' } : m;
+            }
+            return admin && m.SenderId === admin.id && (!m.status || m.status === 'SENT')
+              ? { ...m, status: 'DELIVERED' }
+              : m;
+          })
+        );
+      }
+    });
+
     // Listen for room updates (e.g. unread counters, last messages)
     socket.on('conversations_updated', () => {
       queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
     });
 
     return () => {
+      socket.off('connect');
+      socket.off('new_message');
+      socket.off('message_read');
+      socket.off('message_delivered');
+      socket.off('conversations_updated');
       socket.disconnect();
     };
   }, [token, admin, queryClient]);
@@ -265,9 +298,18 @@ export function ChatPage() {
                           >
                             <p className="break-all whitespace-pre-wrap">{msg.Content}</p>
                           </div>
-                          <p className={`text-[9px] text-muted-foreground mt-1 ${isOutgoing ? 'text-right mr-1' : 'ml-1'}`}>
-                            {new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                          <div className={`flex items-center gap-1 mt-1 ${isOutgoing ? 'justify-end mr-1' : 'ml-1'}`}>
+                            <p className="text-[9px] text-muted-foreground">
+                              {new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            {isOutgoing && (
+                              <span className="text-[10px] select-none">
+                                {(!msg.status || msg.status === 'SENT') && <span className="text-muted-foreground">✓</span>}
+                                {msg.status === 'DELIVERED' && <span className="text-muted-foreground">✓✓</span>}
+                                {msg.status === 'READ' && <span className="text-green-500 font-semibold">✓✓</span>}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
