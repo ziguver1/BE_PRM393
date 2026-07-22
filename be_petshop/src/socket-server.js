@@ -3,7 +3,8 @@ const express = require('express');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
 const fs = require('fs');
 const path = require('path');
 
@@ -22,12 +23,12 @@ const io = new Server(server, {
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "petshop_jwt_access_secret_key_2026_secure";
 
 // 1. Initialize Firebase Admin
-const serviceAccountPath = path.join(__dirname, 'firebase-service-account.json');
+const serviceAccountPath = path.join(__dirname, '..', 'firebase-service-account.json');
 if (fs.existsSync(serviceAccountPath)) {
   try {
     const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+    initializeApp({
+      credential: cert(serviceAccount)
     });
     console.log('Firebase Admin initialized on socket server.');
   } catch (e) {
@@ -57,7 +58,7 @@ async function sendPushIfOffline(conversationId, customerUserId, messageText) {
           },
           token: user.fcmToken,
         };
-        await admin.messaging().send(messagePayload);
+        await getMessaging().send(messagePayload);
         console.log('FCM message sent successfully to customer token.');
       } else {
         console.log('No FCM token found for customer', customerUserId);
@@ -69,6 +70,7 @@ async function sendPushIfOffline(conversationId, customerUserId, messageText) {
     console.error('Error in sendPushIfOffline:', err);
   }
 }
+
 
 // 2. Chat Namespace & Middleware Auth
 const chatNamespace = io.of('/chat');

@@ -1,12 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '../../services/auth.service';
-import { registerSchema, loginSchema, refreshSchema } from '../../validators/auth.validator';
+import { registerSchema, loginSchema, refreshSchema, sendEmailOtpSchema, verifyEmailOtpSchema, forgotPasswordSchema, verifyResetOtpSchema, resetPasswordSchema } from '../../validators/auth.validator';
 import { handleError, AppError } from '../../middleware/error.middleware';
 import { TokenPayload } from '../../lib/jwt';
 
 const authService = new AuthService();
 
 export class AuthController {
+  async sendEmailOtp(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const validated = sendEmailOtpSchema.parse(body);
+      const result = await authService.sendEmailOtp(validated);
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  async verifyEmailOtp(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const validated = verifyEmailOtpSchema.parse(body);
+      const result = await authService.verifyEmailOtp(validated);
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  async forgotPassword(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const validated = forgotPasswordSchema.parse(body);
+      const result = await authService.forgotPassword(validated);
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  async verifyResetOtp(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const validated = verifyResetOtpSchema.parse(body);
+      const result = await authService.verifyResetOtp(validated);
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  async resetPassword(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const validated = resetPasswordSchema.parse(body);
+      const result = await authService.resetPassword(validated);
+      return NextResponse.json(result, { status: 200 });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
   async register(req: NextRequest) {
     try {
       const body = await req.json();

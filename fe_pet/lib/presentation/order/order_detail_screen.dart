@@ -522,7 +522,7 @@ class OrderDetailScreen extends StatelessWidget {
                       onPressed: () => _confirmReceived(context),
                       icon: const Icon(Icons.check_circle, size: 22),
                       label: const Text(
-                        '✓ Xác nhận đã nhận hàng',
+                        'Xác nhận đã nhận hàng',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

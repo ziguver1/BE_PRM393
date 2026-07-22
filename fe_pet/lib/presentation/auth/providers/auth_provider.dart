@@ -118,6 +118,7 @@ class AuthNotifier extends Notifier<AuthState> {
     required String fullName,
     required String email,
     required String password,
+    required String verificationToken,
     String? phone,
     String? avatar,
   }) async {
@@ -127,6 +128,7 @@ class AuthNotifier extends Notifier<AuthState> {
         fullName: fullName,
         email: email,
         password: password,
+        verificationToken: verificationToken,
         phone: phone,
         avatar: avatar,
       );

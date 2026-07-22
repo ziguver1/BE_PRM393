@@ -44,6 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String fullName,
     required String email,
     required String password,
+    required String verificationToken,
     String? phone,
     String? avatar,
   }) async {
@@ -51,6 +52,7 @@ class AuthRepositoryImpl implements AuthRepository {
       fullName: fullName,
       email: email,
       password: password,
+      verificationToken: verificationToken,
       phone: phone,
       avatar: avatar,
     );
@@ -58,6 +60,39 @@ class AuthRepositoryImpl implements AuthRepository {
     await _localDataSource.saveRefreshToken(response.refreshToken);
     await _localDataSource.saveUser(response.user);
     return response.user;
+  }
+
+  @override
+  Future<void> sendEmailOtp({required String email}) {
+    return _remoteDataSource.sendEmailOtp(email: email);
+  }
+
+  @override
+  Future<String> verifyEmailOtp({required String email, required String otp}) {
+    return _remoteDataSource.verifyEmailOtp(email: email, otp: otp);
+  }
+
+  @override
+  Future<void> forgotPassword({required String email}) {
+    return _remoteDataSource.forgotPassword(email: email);
+  }
+
+  @override
+  Future<String> verifyResetOtp({required String email, required String otp}) {
+    return _remoteDataSource.verifyResetOtp(email: email, otp: otp);
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String passwordResetToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) {
+    return _remoteDataSource.resetPassword(
+      passwordResetToken: passwordResetToken,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
   }
 
   @override

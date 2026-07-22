@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart' as provider_pkg;
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/notification_provider.dart';
 import 'providers/home_provider.dart';
@@ -29,6 +32,135 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.invalidate(homePopularProductsProvider);
   }
 
+  void _showShopInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with Title and Close Button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.storefront_rounded, color: AppColors.primary, size: 28),
+                        SizedBox(width: 8),
+                        Text('PetShop Xin Chào!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              // Description and Address Content
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Chào mừng bạn đến với PetShop! Chúng tôi tự hào mang đến không gian mua sắm lý tưởng với các sản phẩm thức ăn, phụ kiện cao cấp và dịch vụ chăm sóc thú cưng chuẩn 5 sao. Sự hài lòng của các "boss" nhỏ là niềm vui lớn nhất của chúng tôi!',
+                      style: TextStyle(height: 1.5, fontSize: 14, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.location_on, color: AppColors.primary, size: 18),
+                              SizedBox(width: 6),
+                              Text(
+                                'Chi nhánh 1 (Trụ sở chính)',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Lô E2a-7, Đường D1 Khu Công nghệ cao,\nP. Long Thạnh Mỹ, TP. Thủ Đức, TP. HCM',
+                            style: TextStyle(fontSize: 13, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Full-width Map at the bottom
+              SizedBox(
+                height: 220,
+                width: double.infinity,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: const LatLng(10.8411276, 106.809883),
+                    initialZoom: 15.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.fe_pet',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: const LatLng(10.8411276, 106.809883),
+                          width: 100,
+                          height: 60,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.2),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  'PETSHOP',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                              const Icon(Icons.location_on, color: AppColors.primary, size: 30),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -46,6 +178,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               floating: false,
               elevation: 0,
               centerTitle: true,
+              leading: IconButton(
+                icon: const Icon(Icons.storefront_rounded, color: AppColors.primary),
+                tooltip: 'Thông tin Shop',
+                onPressed: () => _showShopInfo(context),
+              ),
               toolbarHeight: 80, // Elevated toolbar height to let the logo breathe
               backgroundColor: isDark ? AppColors.surfaceDark : AppColors.primary,
               title: Hero(
@@ -184,6 +321,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SliverToBoxAdapter(child: PetTips()),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/ai-chat'),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.auto_awesome, color: Colors.white),
+        label: const Text(
+          'Hỏi AI',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );

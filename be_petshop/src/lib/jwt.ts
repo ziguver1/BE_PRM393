@@ -32,3 +32,35 @@ export function verifyRefreshToken(token: string): TokenPayload | null {
     return null;
   }
 }
+
+export function generateVerificationToken(email: string): string {
+  return jwt.sign({ email, purpose: 'email-verification' }, ACCESS_SECRET, { expiresIn: '10m' });
+}
+
+export function verifyVerificationToken(token: string): { email: string } | null {
+  try {
+    const payload = jwt.verify(token, ACCESS_SECRET) as any;
+    if (payload.purpose === 'email-verification' && payload.email) {
+      return { email: payload.email };
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export function generatePasswordResetToken(email: string): string {
+  return jwt.sign({ email, purpose: 'password-reset' }, ACCESS_SECRET, { expiresIn: '10m' });
+}
+
+export function verifyPasswordResetToken(token: string): { email: string } | null {
+  try {
+    const payload = jwt.verify(token, ACCESS_SECRET) as any;
+    if (payload.purpose === 'password-reset' && payload.email) {
+      return { email: payload.email };
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}

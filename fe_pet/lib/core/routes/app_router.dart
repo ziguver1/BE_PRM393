@@ -6,6 +6,7 @@ import '../../presentation/auth/splash_screen.dart';
 import '../../presentation/auth/login_screen.dart';
 import '../../presentation/auth/register_screen.dart';
 import '../../presentation/auth/forgot_password_screen.dart';
+import '../../presentation/auth/reset_password_screen.dart';
 import '../../presentation/home/main_navigation_screen.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/search/search_screen.dart';
@@ -23,6 +24,7 @@ import '../../presentation/checkout/payment_webview_screen.dart';
 import '../../presentation/order/order_history_screen.dart';
 import '../../presentation/notifications/notifications_screen.dart';
 import '../../presentation/chat/chat_screen.dart';
+import '../../presentation/chat/ai_chat_screen.dart';
 import '../../presentation/wishlist/wishlist_screen.dart';
 import '../../presentation/auth/providers/auth_provider.dart';
 import '../../data/models/product_model.dart';
@@ -56,6 +58,7 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/forgot-password' ||
+          state.matchedLocation == '/reset-password' ||
           state.matchedLocation == '/splash';
 
       // Keep showing splash or loading indicator during session restore
@@ -69,7 +72,8 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         final isAuthFormPath =
             state.matchedLocation == '/login' ||
             state.matchedLocation == '/register' ||
-            state.matchedLocation == '/forgot-password';
+            state.matchedLocation == '/forgot-password' ||
+            state.matchedLocation == '/reset-password';
         return isAuthFormPath ? null : '/login';
       }
 
@@ -93,6 +97,13 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) {
+          final email = state.extra as String? ?? '';
+          return ResetPasswordScreen(email: email);
+        },
       ),
 
       // Bottom navigation tabs shell route
@@ -193,6 +204,7 @@ final appRouterHelperProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(path: '/chat', builder: (context, state) => const ChatScreen()),
+      GoRoute(path: '/ai-chat', builder: (context, state) => const AiChatScreen()),
       GoRoute(
         path: '/wishlist',
         builder: (context, state) => const WishlistScreen(),

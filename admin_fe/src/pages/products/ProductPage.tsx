@@ -95,11 +95,11 @@ export function ProductPage() {
     setDialogType('create');
     setFormData({
       Name: '',
-      Price: 0,
+      Price: '' as any,
       CategoryId: categories[0]?.CategoryId || 0,
       Description: '',
       ImageUrl: '',
-      Stock: 0,
+      Stock: '' as any,
     });
     setIsDialogOpen(true);
   };
@@ -344,8 +344,8 @@ export function ProductPage() {
               <input
                 type="number"
                 className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={formData.Stock || 0}
-                onChange={(e) => setFormData({ ...formData, Stock: parseInt(e.target.value) || 0 })}
+                value={formData.Stock ?? ''}
+                onChange={(e) => setFormData({ ...formData, Stock: e.target.value === '' ? '' as any : parseInt(e.target.value) })}
               />
               <div className="mt-4 flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -376,8 +376,8 @@ export function ProductPage() {
                   <input
                     type="number"
                     className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    value={formData.Price || 0}
-                    onChange={(e) => setFormData({ ...formData, Price: parseFloat(e.target.value) || 0 })}
+                    value={formData.Price ?? ''}
+                    onChange={(e) => setFormData({ ...formData, Price: e.target.value === '' ? '' as any : parseFloat(e.target.value) })}
                   />
                 </div>
                 <div>
@@ -385,9 +385,9 @@ export function ProductPage() {
                   <input
                     type="number"
                     className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    value={formData.Stock || 0}
+                    value={formData.Stock ?? ''}
                     disabled={dialogType === 'edit'} // Lock stock updates to specific 📦 button if desired, or allow editing
-                    onChange={(e) => setFormData({ ...formData, Stock: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, Stock: e.target.value === '' ? '' as any : parseInt(e.target.value) })}
                   />
                 </div>
               </div>

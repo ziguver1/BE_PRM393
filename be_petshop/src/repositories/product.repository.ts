@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma';
 import { ProductQueryInput } from '../validators/product.validator';
+import { removeVietnameseTones } from '../utils/string.util';
 
 /**
  * Interface for get products query parameters
@@ -39,12 +40,20 @@ export class ProductRepository {
       where.CategoryId = categoryId;
     }
 
-    // Search by product name (case insensitive)
+    // Search by product name (case insensitive, and accent insensitive via fallback)
     if (search) {
-      where.Name = {
-        contains: search,
-        mode: 'insensitive',
-      };
+      const normalizedSearch = removeVietnameseTones(search);
+      // Fetch lightweight list of all products to filter in-memory for accent insensitivity
+      const allProducts = await prisma.product.findMany({ select: { ProductId: true, Name: true, Description: true } });
+      const matchedIds = allProducts
+        .filter(p => {
+          const normName = removeVietnameseTones(p.Name);
+          const normDesc = removeVietnameseTones(p.Description || '');
+          return normName.includes(normalizedSearch) || normDesc.includes(normalizedSearch);
+        })
+        .map(p => p.ProductId);
+
+      where.ProductId = { in: matchedIds.length > 0 ? matchedIds : [-1] }; // -1 to force no results if no match
     }
 
     // Apply faceted search filters
@@ -100,9 +109,17 @@ export class ProductRepository {
     const where: any = {};
 
     if (search) {
-      where.Name = {
-        contains: search,
-      };
+      const normalizedSearch = removeVietnameseTones(search);
+      const allProducts = await prisma.product.findMany({ select: { ProductId: true, Name: true, Description: true } });
+      const matchedIds = allProducts
+        .filter(p => {
+          const normName = removeVietnameseTones(p.Name);
+          const normDesc = removeVietnameseTones(p.Description || '');
+          return normName.includes(normalizedSearch) || normDesc.includes(normalizedSearch);
+        })
+        .map(p => p.ProductId);
+
+      where.ProductId = { in: matchedIds.length > 0 ? matchedIds : [-1] };
     }
 
     if (categoryId) {

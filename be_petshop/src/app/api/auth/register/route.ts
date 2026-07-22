@@ -20,6 +20,7 @@ const controller = new AuthController();
  *               - FullName
  *               - Email
  *               - Password
+ *               - verificationToken
  *             properties:
  *               FullName:
  *                 type: string
@@ -30,6 +31,9 @@ const controller = new AuthController();
  *               Password:
  *                 type: string
  *                 example: password123
+ *               verificationToken:
+ *                 type: string
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR..."
  *               Phone:
  *                 type: string
  *                 example: "+123456789"

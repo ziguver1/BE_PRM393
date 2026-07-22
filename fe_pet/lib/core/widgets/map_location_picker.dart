@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:dio/dio.dart';
 
 class MapLocationPicker extends StatefulWidget {
   final LatLng? initialLocation;
@@ -20,6 +21,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   late MapController _mapController;
   LatLng? _selectedLocation;
   final double _initialZoom = 13.0;
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
 
   // TP.HCM coordinates
   static const LatLng _hcmCenter = LatLng(10.8231, 106.6297);
@@ -38,6 +41,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   @override
   void dispose() {
     _mapController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -64,6 +68,57 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     }
   }
 
+  Future<void> _searchAddress(String query) async {
+    if (query.trim().isEmpty) return;
+    
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://nominatim.openstreetmap.org/search',
+        queryParameters: {
+          'q': query,
+          'format': 'json',
+          'limit': 1,
+        },
+      );
+
+      if (response.data != null && (response.data as List).isNotEmpty) {
+        final result = response.data[0];
+        final lat = double.parse(result['lat'].toString());
+        final lon = double.parse(result['lon'].toString());
+        final point = LatLng(lat, lon);
+
+        setState(() {
+          _selectedLocation = point;
+        });
+        widget.onLocationSelected(point);
+        _mapController.move(point, 16.0);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không tìm thấy địa chỉ. Vui lòng thử lại.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lỗi khi tìm kiếm địa chỉ.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -71,6 +126,49 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Search Address Bar
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Nhập địa chỉ cần tìm...',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onSubmitted: _searchAddress,
+                ),
+              ),
+              if (_isSearching)
+                const Padding(
+                  padding: EdgeInsets.only(right: 12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.grey),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    _searchAddress(_searchController.text);
+                  },
+                ),
+            ],
+          ),
+        ),
+
         // Map container
         Container(
           height: 300,

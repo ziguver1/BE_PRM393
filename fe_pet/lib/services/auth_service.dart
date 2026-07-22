@@ -6,12 +6,10 @@ class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
-  bool _isGoogleInitialized = false;
-
   User? get currentUser => _firebaseAuth.currentUser;
 
   Future<void> _initializeGoogleSignIn() async {
-    if (_isGoogleInitialized) return;
+    if (_globalGoogleInitialized) return;
 
     if (kIsWeb) {
       await _googleSignIn.initialize(
@@ -21,7 +19,7 @@ class AuthService {
       await _googleSignIn.initialize();
     }
 
-    _isGoogleInitialized = true;
+    _globalGoogleInitialized = true;
   }
 
   AuthService() {
@@ -101,10 +99,11 @@ class AuthService {
   // --- NEW STATIC METHODS FOR USER_REQUEST ---
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final GoogleSignIn _staticGoogleSignIn = GoogleSignIn.instance;
-  static bool _staticIsGoogleInitialized = false;
+  static bool _globalGoogleInitialized = false;
+  static bool _isSignInInProgress = false;
 
   static Future<void> _staticInitializeGoogleSignIn() async {
-    if (_staticIsGoogleInitialized) return;
+    if (_globalGoogleInitialized) return;
     if (kIsWeb) {
       await _staticGoogleSignIn.initialize(
         clientId: '837187985882-fhc4m8i1pjljd50le64p8q4nps03h942.apps.googleusercontent.com',
@@ -112,10 +111,15 @@ class AuthService {
     } else {
       await _staticGoogleSignIn.initialize();
     }
-    _staticIsGoogleInitialized = true;
+    _globalGoogleInitialized = true;
   }
 
   static Future<UserCredential?> signInWithGoogle() async {
+    if (_isSignInInProgress) {
+      debugPrint('Sign in with Google already in progress.');
+      return null;
+    }
+    _isSignInInProgress = true;
     try {
       await _staticInitializeGoogleSignIn();
       if (kIsWeb) {
@@ -137,6 +141,8 @@ class AuthService {
     } catch (e) {
       debugPrint('Error in signInWithGoogle: $e');
       return null;
+    } finally {
+      _isSignInInProgress = false;
     }
   }
 
